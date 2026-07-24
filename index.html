@@ -975,7 +975,7 @@ const state = {
   sets:[], warm:[], target:{w:102.5,r:8},
   tempoOn:true, sound:true,
   wt:{start:92.7,target:85,current:88.6,prev:89.0,hist:[92.7,92.5,92.1,91.6,91.4,90.8,90.6,90.1,89.7,89.5,89.0,88.9,88.6]},
-  apps:{'Apple Health':{on:true,sync:'live',ico:'♥'},'Health Connect':{on:false,sync:'—',ico:'✚'},Garmin:{on:true,sync:'2 min ago',ico:'⌚'},Oura:{on:true,sync:'8 min ago',ico:'◍'},Fitbit:{on:false,sync:'—',ico:'⬤'},Whoop:{on:false,sync:'—',ico:'➰'},'Google Calendar':{on:false,sync:'—',ico:'▦'}},
+  devices:[],   // real terra_connections rows, loaded in loadLive()
   nutrition:{source:'Apple Health', kcal:1840, kcalTarget:2100, note:'260 kcal left today · protein needs a nudge before dinner', macros:[['Protein',152,180,'g'],['Carbs',195,210,'g'],['Fat',60,70,'g']]},
   cadence:'Daily'
 };
@@ -1256,6 +1256,11 @@ function renderNutrition(){
 // chats with (digits only, international, no +). When set, every PAX button
 // in the app deep-links into that thread instead of the in-app snapshot.
 const PAX_WHATSAPP = '447347737076'; // the PACT line PAX messages from
+// The PAX bot's public base URL (Railway). Powers the real wearable connect
+// flow: Settings → Connect a device → Terra widget. Empty = the button
+// explains connections aren't switched on yet. ⚠️ FILL AT DEPLOY — copy the
+// Railway domain (railway domain / the Terra dashboard webhook URL, minus /terra).
+const BOT_URL = ''; // e.g. 'https://fitness-coach-bot-production.up.railway.app'
 const PACT_CONFIG = {
   SUPABASE_URL:'https://rwmmtqchrnlpnjzkrjwg.supabase.co',
   SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3bW10cWNocm5scG5qemtyandnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3NjU1ODgsImV4cCI6MjA5MjM0MTU4OH0.kX-YPlwUGNacOz02van4C0ztVukTvfrG9Lxd02V00gc'
@@ -1286,7 +1291,10 @@ async function onSignedIn(){
   if(_loadedOnce) return; _loadedOnce=true;
   document.getElementById('login').classList.add('hidden'); go('dash');
   try{ toast('Syncing your latest data…',1500); await loadLive(); toast('You\'re up to date.',1400);
-       if(/[?&]begin=1/.test(location.search)) beginWorkout(); }   // morning-brief deep link → straight into the logger
+       if(/[?&]begin=1/.test(location.search)) beginWorkout();     // morning-brief deep link → straight into the logger
+       // Back from the Terra Connect widget (TERRA_SUCCESS/FAILURE_URL)
+       if(/[?&]device=connected/.test(location.search)){ openSettings(); toast('✓ Device connected — your data starts flowing in the next few minutes.',3600); }
+       else if(/[?&]device=failed/.test(location.search)){ openSettings(); toast('That connection didn\'t complete — give it another go.',3200); } }
   catch(e){ console.error('loadLive',e); toast('Signed in, but your data didn\'t load — pull to refresh, or ask your coach to check your setup.',3600); }
 }
 async function loadLive(){
@@ -1296,6 +1304,14 @@ async function loadLive(){
   if(!client) throw new Error('No client row linked to this login (set clients.auth_user_id).');
   const cid=client.id, today=new Date().toISOString().slice(0,10);
   state.live={ cid, today };
+
+  // connected wearables (terra_connections — RLS scopes to this athlete)
+  try{
+    const { data:devs } = await sb.from('terra_connections')
+      .select('provider,status,terra_user_id,connected_at,last_event_at')
+      .eq('client_id',cid).order('connected_at',{ascending:true});
+    state.devices = devs||[];
+  }catch(e){ state.devices=[]; }
 
   // weight targets + trend
   if(client.start_weight)  state.wt.start=+client.start_weight;
@@ -1552,18 +1568,70 @@ function barSVG(data,opts){
 
 /* ---------- settings ---------- */
 function openSettings(){ renderSettings(); go('settings'); }
-function toggleApp(name){ const a=state.apps[name]; a.on=!a.on; a.sync=a.on?'just now':'—'; renderSettings(); toast(a.on?`✓ ${name} connected.`:`${name} disconnected.`,1500); }
+function deviceMeta(p){
+  const M={GARMIN:['⌚','Garmin'],OURA:['◍','Oura'],WHOOP:['➰','Whoop'],FITBIT:['⬤','Fitbit'],
+    POLAR:['❄️','Polar'],SUUNTO:['🧭','Suunto'],COROS:['🟠','COROS'],WITHINGS:['⚖️','Withings'],
+    SAMSUNG:['📱','Samsung Health'],GOOGLE:['✚','Google Fit'],PELOTON:['🚴','Peloton'],
+    ZWIFT:['🎮','Zwift'],STRAVA:['🏃','Strava'],APPLE:['♥','Apple Health'],EIGHT:['🛏','Eight Sleep']};
+  const k=(p||'').toUpperCase(); return M[k]||['⌚',k?k.charAt(0)+k.slice(1).toLowerCase():'Device'];
+}
+function agoShort(iso){
+  if(!iso) return null; const m=Math.max(0,Math.round((Date.now()-new Date(iso).getTime())/60000));
+  if(m<2) return 'just now'; if(m<60) return m+' min ago'; const h=Math.round(m/60);
+  if(h<24) return h+'h ago'; const d=Math.round(h/24); return d===1?'yesterday':d+' days ago';
+}
+async function connectDevice(){
+  if(!LIVE){ toast('Demo mode — sign in to connect a device.'); return; }
+  if(!BOT_URL){ toast('Device connections aren\'t switched on yet — ask your coach.',2600); return; }
+  try{
+    toast('Getting your secure connect link…',2200);
+    const { data:{ session } } = await sb.auth.getSession();
+    if(!session){ toast('Sign in again first.'); return; }
+    const r=await fetch(BOT_URL+'/terra/session',{ method:'POST', headers:{ Authorization:'Bearer '+session.access_token } });
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.url){ toast(j.error||'Couldn\'t get a connect link — try again in a minute.',3200); return; }
+    location.href=j.url;   // Terra widget → redirects back with ?device=connected
+  }catch(e){ console.error('connectDevice',e); toast('Couldn\'t reach the connection service — check your signal and retry.',3200); }
+}
+async function disconnectDevice(tuid,label){
+  if(!BOT_URL){ toast('Ask your coach to disconnect this one.'); return; }
+  try{
+    const { data:{ session } } = await sb.auth.getSession();
+    if(!session){ toast('Sign in again first.'); return; }
+    const r=await fetch(BOT_URL+'/terra/disconnect',{ method:'POST',
+      headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+session.access_token },
+      body:JSON.stringify({ terra_user_id:tuid }) });
+    if(r.ok){ const d=(state.devices||[]).find(x=>x.terra_user_id===tuid); if(d) d.status='revoked'; renderSettings(); toast(`${label} disconnecting — it\'ll drop off shortly.`,2400); }
+    else toast('Couldn\'t disconnect just now — try again.',2600);
+  }catch(e){ toast('Couldn\'t disconnect just now — try again.',2600); }
+}
 function notifRow(ic,n,d,t){ return `<div class="set-row"><div class="si">${ic}</div><div class="sc"><div class="sn">${n}</div><div class="sm">${d}</div></div><span class="set-time">${t}</span></div>`; }
 function renderSettings(){
-  const apps=Object.entries(state.apps).map(([n,a])=>`
-    <div class="set-row ${a.on?'on':''}"><div class="si">${a.ico}</div><div class="sc"><div class="sn">${n}</div><div class="sm">${a.on?'Connected · synced '+a.sync:'Not connected'}</div></div>
-    <button class="cbtn" style="${a.on?'background:#EEF2F6;border-color:#EEF2F6;color:var(--muted)':''}" onclick="toggleApp('${n}')">${a.on?'Disconnect':'Connect'}</button></div>`).join('');
+  const devs=(state.devices||[]);
+  const devRows=devs.map(d=>{
+    const [ico,label]=deviceMeta(d.provider);
+    const ago=agoShort(d.last_event_at);
+    const sub= d.status==='revoked' ? 'Disconnected'
+             : d.status==='error'   ? 'Needs attention — reconnect to resume syncing'
+             : ago ? 'Connected · data landed '+ago : 'Connected · waiting for first sync';
+    const btn= d.status==='revoked'
+      ? `<button class="cbtn" onclick="connectDevice()">Reconnect</button>`
+      : d.status==='error'
+      ? `<button class="cbtn" onclick="connectDevice()">Fix</button>`
+      : `<button class="cbtn" style="background:#EEF2F6;border-color:#EEF2F6;color:var(--muted)" onclick="disconnectDevice('${d.terra_user_id}','${label.replace(/'/g,'')}')">Disconnect</button>`;
+    return `<div class="set-row ${d.status!=='revoked'?'on':''}"><div class="si">${ico}</div><div class="sc"><div class="sn">${label}</div><div class="sm">${sub}</div></div>${btn}</div>`;
+  }).join('');
+  const apps=`
+    <div class="set-row on"><div class="si">♥</div><div class="sc"><div class="sn">Apple Health</div><div class="sm">Nutrition &amp; daily stats via Health Auto Export</div></div></div>
+    ${devRows}
+    <div class="set-row"><div class="si">⌚</div><div class="sc"><div class="sn">${devs.length?'Add another device':'Connect your device'}</div><div class="sm">Garmin, Oura, Whoop, Fitbit, Polar &amp; more — activity syncs itself</div></div>
+    <button class="cbtn" onclick="connectDevice()">Connect</button></div>`;
   const shared=state.pacts.filter(p=>p.share).length;
   document.getElementById('setBody').innerHTML=`
     <div class="set-card" style="margin-top:16px"><div class="set-row"><div class="si" style="background:var(--navy);color:#fff;font-family:Montserrat;font-weight:800">A</div><div class="sc"><div class="sn">Alex Joyner</div><div class="sm">Coached by ${coachN()} · target ${state.wt.target}kg</div></div></div></div>
     <div class="set-h">Connected apps</div>
     <div class="set-card">${apps}</div>
-    <div class="sm" style="color:var(--faint);font-size:11.5px;margin:8px 2px">Nutrition pulls from Apple Health / Health Connect — your food app writes there, PACT reads it. Fitbit, Whoop &amp; Samsung add as fitness bands.</div>
+    <div class="sm" style="color:var(--faint);font-size:11.5px;margin:8px 2px">Nutrition pulls from Apple Health / Health Connect — your food app writes there, PACT reads it. Wearables connect once and every workout, sleep and step lands automatically.</div>
     <div class="set-h">Daily check-ins from PAX</div>
     <div class="set-card">
       ${notifRow('🌅','Morning brief','Motivation + today\'s session','07:00')}
@@ -2335,7 +2403,12 @@ state.cardio=[{type:'run',name:'Morning Run',km:5.2,min:28,date:'Mon'},{type:'ri
 state.cardioType='run';
 function renderCardio(){
   const el=document.getElementById('cardioList'); if(!el) return;
-  if(!state.cardio.length){ el.innerHTML='<div class="muted" style="font-size:13px;padding:8px 0">Nothing yet this week — wearable sessions land here automatically.</div>'; document.getElementById('cardioMeta').textContent='runs & rides'; return; }
+  if(!state.cardio.length){
+    const hasDev=(state.devices||[]).some(d=>d.status!=='revoked');
+    el.innerHTML='<div class="muted" style="font-size:13px;padding:8px 0">'+(hasDev
+      ?'Nothing yet this week — wearable sessions land here automatically.'
+      :'Nothing yet this week — <a style="color:var(--red-dark);font-weight:600;cursor:pointer" onclick="openSettings()">connect your watch</a> and sessions land here automatically.')+'</div>';
+    document.getElementById('cardioMeta').textContent='runs & rides'; return; }
   el.innerHTML=state.cardio.map(a=>`<div class="pact"><span style="font-size:20px;flex:0 0 28px">${CARDIO_ICON[a.type]||'⚡'}</span>
     <div class="pn">${a.name||a.type[0].toUpperCase()+a.type.slice(1)}<div class="muted" style="font-size:11.5px;font-weight:500;margin-top:2px">${a.date}${a.hr?' · '+a.hr+' bpm':''}${a.kcal?' · '+a.kcal+' kcal':''}</div></div>
     <div style="text-align:right"><div style="font-family:Montserrat;font-weight:800">${a.km?a.km.toFixed(1)+' km':(a.min?a.min+' min':'')}</div><div class="muted" style="font-size:11px">${a.km&&a.min?a.min+' min':''}</div></div></div>`).join('');
