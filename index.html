@@ -80,6 +80,9 @@
   .tile .val{font-family:Montserrat;font-size:27px;font-weight:800;margin-top:6px;line-height:1}
   .tile .val span{font-size:14px;font-weight:600;color:var(--muted)}
   .tile .delta{font-size:12px;font-weight:600;margin-top:6px}
+  .tile .sbar{height:5px;background:#EEF2F6;border-radius:99px;margin-top:8px;overflow:hidden}
+  .tile .sbar i{display:block;height:100%;width:0%;background:var(--navy);border-radius:99px;transition:width .4s ease}
+  .tile .sbar i.hit{background:var(--good)}
   .up{color:var(--good)}.down{color:var(--good)}
 
   /* section head */
@@ -588,7 +591,7 @@
     <!-- stat tiles -->
     <div class="tiles">
       <div class="tile red"><div class="lbl">Current weight</div><div class="val" id="curWt">—</div><div class="delta muted" id="curDelta">log a weigh-in</div></div>
-      <div class="tile navy"><div class="lbl">Target weight</div><div class="val" id="tgtWt">—</div><div class="delta muted" id="tgtRemain"></div></div>
+      <div class="tile navy"><div class="lbl">Steps today</div><div class="val" style="font-size:22px" id="stepsVal">—</div><div class="sbar"><i id="stepsBar"></i></div><div class="delta muted" id="stepsSub">syncs from your tracker</div></div>
       <div class="tile"><div class="lbl">Projected end</div><div class="val" style="font-size:19px" id="projVal">—</div><div class="delta muted" id="projSub">builds from your weigh-ins</div></div>
       <div class="tile"><div class="lbl">7-day adherence</div><div class="val" id="adhVal">—</div><div class="delta muted" id="adhSub">pacts kept, last 7 days</div></div>
     </div>
@@ -1486,6 +1489,19 @@ async function loadLive(){
     const ws=document.getElementById('wkAvgSteps'), wsl=document.getElementById('wkAvgSleep');
     if(ws) ws.textContent = stepN? Math.round(stepSum/stepN).toLocaleString() : '—';
     if(wsl) wsl.textContent = slN? (Math.floor(slSum/slN)+'h '+String(Math.round((slSum/slN%1)*60)).padStart(2,'0')+'m') : '—';
+    // Steps today vs target tile — same day-bucket as the week strip; own
+    // try/catch so a failure here can never take out the strip.
+    try{
+      const target=+client.step_target||8000;
+      const tShort= target%1000===0 ? (target/1000)+'k' : target.toLocaleString();
+      const todayRow=byDay[today]; const steps=todayRow?(+todayRow.steps||0):null;
+      const sv=document.getElementById('stepsVal'), sb2=document.getElementById('stepsBar'), ss=document.getElementById('stepsSub');
+      if(sv) sv.innerHTML = steps!=null ? `${steps.toLocaleString()} <span>/ ${tShort}</span>` : `— <span>/ ${tShort}</span>`;
+      if(sb2){ const pct=steps!=null?Math.min(100,Math.round(steps/target*100)):0; sb2.style.width=pct+'%'; if(pct>=100) sb2.classList.add('hit'); }
+      if(ss) ss.textContent = steps==null ? 'no steps synced yet today'
+                        : steps>=target ? 'Target hit ✓'
+                        : `${(target-steps).toLocaleString()} to go`;
+    }catch(e){ console.error('steps tile',e); }
   }catch(e){ console.error('week strip',e); }
   // Real PAX thread button
   try{ if(PAX_WHATSAPP){ const b=document.getElementById('paxWaBtn'); if(b) b.style.display=''; } }catch(e){}
@@ -2473,8 +2489,8 @@ function updateWeightUI(){
   if(w.current&&w.prev){ const dw=+(w.current-w.prev).toFixed(1);
     set('curDelta', dw<=0?`▼ ${Math.abs(dw)}kg vs last weigh-in`:`▲ ${dw}kg vs last weigh-in`);
     const cd=document.getElementById('curDelta'); if(cd) cd.className='delta '+(dw<=0?'down':'muted'); }
-  if(w.target){ set('tgtWt',`${(+w.target).toFixed(1)}<span>kg</span>`);
-    if(w.current) set('tgtRemain', Math.abs(w.current-w.target)<=0.2?'at target':`${Math.abs(w.current-w.target).toFixed(1)}kg ${w.current>w.target?'remaining':'past target'}`); }
+  // (tgtWt/tgtRemain writes removed — the Target-weight tile is now the
+  // Steps-today tile; target weight lives in the goal card's headline/labels.)
   if(w.start&&w.current&&w.target&&w.start!==w.target){
     const pct=Math.round((w.start-w.current)/(w.start-w.target)*100);
     set('goalHead',`${greetWord()}, ${name}. You're <b>${isFinite(pct)?Math.max(0,Math.min(100,pct)):0}%</b> of the way to ${w.target}kg.`);
