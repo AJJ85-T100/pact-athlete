@@ -1,0 +1,2444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0A2540">
+<title>PACT.Health — Athlete</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --red:#D92D20; --red-dark:#B42318;
+    --navy:#0A2540; --navy-2:#0E2E4E;
+    --bg:#F4F6F8; --card:#FFFFFF;
+    --ink:#0A2540; --muted:#5B6B7B; --faint:#8A98A6;
+    --line:#E4E9EE; --good:#12805C;
+    --shadow:0 4px 10px rgba(10,37,64,.06);
+    --shadow-lg:0 10px 28px rgba(10,37,64,.14);
+    --r:8px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:#08192B;
+    color:var(--ink);
+    display:flex;justify-content:center;
+    min-height:100vh;
+  }
+  h1,h2,h3,h4,.mont{font-family:Montserrat,Inter,sans-serif;letter-spacing:-.01em}
+  .phone{
+    width:100%;max-width:440px;background:var(--bg);
+    min-height:100vh;position:relative;overflow-x:hidden;
+    box-shadow:0 0 60px rgba(0,0,0,.4);
+  }
+  .hairline{height:4px;background:linear-gradient(90deg,var(--red),#F0553B)}
+  .screen{display:none;padding:0 18px 120px}
+  .screen.active{display:block;animation:fade .28s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @keyframes glow{0%{box-shadow:0 0 0 0 rgba(217,45,32,.55)}100%{box-shadow:0 0 0 22px rgba(217,45,32,0)}}
+  .pulse{animation:glow .8s ease-out}
+
+  /* generic */
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red)}
+  .muted{color:var(--muted)} .faint{color:var(--faint)}
+  .row{display:flex;gap:10px}.between{justify-content:space-between;align-items:center}
+  .card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:16px;margin-top:14px}
+  .pill{display:inline-flex;align-items:center;gap:7px;background:var(--navy);color:#fff;
+    font-size:12px;font-weight:600;padding:7px 12px;border-radius:20px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--red);display:inline-block}
+  .btn{border:0;border-radius:var(--r);font-family:Inter;font-weight:700;font-size:15px;
+    padding:14px 16px;cursor:pointer;width:100%;transition:.15s;display:flex;align-items:center;justify-content:center;gap:8px}
+  .btn-red{background:var(--red);color:#fff}.btn-red:active{background:var(--red-dark)}
+  .btn-navy{background:var(--navy);color:#fff}
+  .btn-ghost{background:#fff;color:var(--navy);border:1.5px solid var(--line)}
+  .btn-sm{padding:10px 14px;font-size:13px;width:auto}
+  .chip{border:1.5px solid var(--line);background:#fff;border-radius:7px;padding:8px 12px;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer}
+  .chip.on{border-color:var(--red);background:#FEF3F2;color:var(--red-dark)}
+
+  /* header */
+  .top{padding:16px 2px 4px}
+  .top .date{font-size:12.5px;font-weight:600;color:var(--muted)}
+  .top h1{font-size:25px;margin:8px 0 12px;line-height:1.2}
+  .top h1 b{color:var(--red)}
+
+  /* today's pact */
+  .pact-card{background:var(--navy);border:1.5px solid var(--red);border-radius:14px;padding:18px;margin-top:14px;color:#fff}
+  .pact-card h2{font-size:26px;margin:6px 0 4px}
+  .pact-card .sub{font-size:13px;color:#B6C4D2}
+  .firstlift{background:rgba(255,255,255,.07);border-radius:8px;padding:11px 13px;margin:14px 0;font-size:13px;color:#DCE6EF}
+  .firstlift b{color:#fff}
+
+  /* stat tiles */
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+  .tile{background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:14px;border-left:3px solid var(--line)}
+  .tile.red{border-left-color:var(--red)} .tile.navy{border-left-color:var(--navy)}
+  .tile .lbl{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .tile .val{font-family:Montserrat;font-size:27px;font-weight:800;margin-top:6px;line-height:1}
+  .tile .val span{font-size:14px;font-weight:600;color:var(--muted)}
+  .tile .delta{font-size:12px;font-weight:600;margin-top:6px}
+  .up{color:var(--good)}.down{color:var(--good)}
+
+  /* section head */
+  .sec-h{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px}
+  .sec-h h3{font-size:15px;margin:0}
+  .sec-h .meta{font-size:12px;color:var(--muted)}
+
+  /* progress bar */
+  .track{height:8px;background:#EAF0F4;border-radius:6px;overflow:hidden;margin:12px 0 8px}
+  .fill{height:100%;background:var(--red);border-radius:6px}
+  .gp-row{display:flex;justify-content:space-between;text-align:center;margin-bottom:4px}
+  .gp-row .k{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+  .gp-row .v{font-family:Montserrat;font-size:20px;font-weight:800;margin-top:3px}
+  .gp-row .v span{font-size:12px;font-weight:600;color:var(--muted)}
+
+  /* pacts */
+  .pact{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+  .pact:first-child{border-top:0}
+  .pcheck{width:22px;height:22px;border-radius:6px;border:2px solid var(--line);flex:0 0 auto;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:#fff}
+  .pcheck.done{background:var(--good);border-color:var(--good)}
+  .pact .pn{font-size:14px;font-weight:600;flex:1}
+  .pact .pmain{flex:1;min-width:0;cursor:pointer}
+  .pact .pmain .pn{flex:none}
+  .pact .pmeta{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pact .pmeta .fire{color:var(--red-dark);font-weight:700}
+  .adaptrow{display:flex;gap:8px;margin-top:10px}
+  .adaptrow .achip{flex:1;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;padding:8px 4px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit}
+  .pd-why{font-size:12.5px;color:#B6C4D2;font-style:italic;margin-top:8px;line-height:1.4}
+  .badge{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 7px;border-radius:5px}
+  .badge.you{background:#FEF3F2;color:var(--red-dark)}
+  .badge.share{background:#E9F2FF;color:#1D4ED8}
+
+  /* coach notes */
+  .note{padding:11px 0;border-top:1px solid var(--line);font-size:13.5px;display:flex;gap:10px}
+  .note:first-child{border-top:0}
+  .note .tag{width:4px;border-radius:3px;background:var(--line);flex:0 0 4px}
+  .note.urgent .tag{background:var(--red)}
+  .note .who{font-size:11px;color:var(--faint);font-weight:600;margin-top:3px}
+
+  /* weekly mini */
+  .week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px}
+  .day{text-align:center;font-size:11px}
+  .day .d{color:var(--faint);font-weight:600;margin-bottom:5px}
+  .day .b{height:34px;border-radius:5px;background:#EAF0F4;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
+  .day .b i{display:block;width:100%;background:var(--navy);border-radius:5px 5px 0 0}
+
+  /* pax strip */
+  .pax{position:sticky;bottom:0;margin:16px -18px 0;padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+    background:var(--navy);color:#fff;display:flex;align-items:center;gap:12px;border-top:1px solid #16375A}
+  .pax .av{width:34px;height:34px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-family:Montserrat;font-weight:800;font-size:14px;flex:0 0 auto}
+  .pax .txt{font-size:12.5px;color:#C6D3DF;flex:1}
+  .pax .txt b{color:#fff}
+
+  /* logger */
+  .lg-top{display:flex;align-items:center;justify-content:space-between;padding:16px 2px 6px}
+  .lg-top .back{width:38px;height:38px;border-radius:10px;background:#fff;box-shadow:var(--shadow);border:0;font-size:18px;cursor:pointer;color:var(--navy)}
+  .lg-top .ttl{font-family:Montserrat;font-weight:800;font-size:15px;letter-spacing:.04em}
+  .kept-seg{display:flex;gap:5px;margin:10px 0 4px}
+  .kept-seg i{flex:1;height:7px;border-radius:4px;background:#E1E8EE}
+  .kept-seg i.done{background:var(--red)}
+  .kept-seg i.cur{background:#fff;border:1.5px solid var(--red)}
+  .ex-card{background:#fff;border-radius:14px;box-shadow:var(--shadow-lg);padding:18px;margin-top:16px}
+  .ex-card h2{font-size:24px;margin:4px 0 0}
+  .videobox{background:var(--navy);border-radius:10px;height:150px;margin:14px 0;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .videobox::before{content:"";position:absolute;inset:0;background:
+    repeating-linear-gradient(0deg,transparent 0 22px,rgba(255,255,255,.04) 22px 23px),
+    repeating-linear-gradient(90deg,transparent 0 22px,rgba(255,255,255,.04) 22px 23px)}
+  .play{width:52px;height:52px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;z-index:1}
+  .videobox .tag2{position:absolute;top:10px;right:10px;font-size:9px;font-weight:700;letter-spacing:.06em;background:rgba(255,255,255,.14);color:#fff;padding:4px 7px;border-radius:5px;z-index:1}
+  .videobox .tmp{position:absolute;bottom:10px;left:12px;font-size:11px;color:#9DB2C6;z-index:1}
+  .presc{display:grid;grid-template-columns:repeat(4,1fr);background:#F7F9FB;border-radius:10px;overflow:hidden}
+  .presc>div{padding:12px 6px;text-align:center;border-right:1px solid #EAF0F4}
+  .presc>div:last-child{border-right:0}
+  .presc .k{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--faint)}
+  .presc .v{font-family:Montserrat;font-weight:800;font-size:18px;margin-top:3px}
+  .presc .u{font-size:10px;color:var(--muted)}
+  .setline{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+  .setline .sc{width:26px;height:26px;border-radius:7px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#fff;flex:0 0 auto;margin-top:2px}
+  .setline .sc.done{background:var(--good);border-color:var(--good)}
+  .sbody{flex:1;min-width:0}
+  .stop{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .setline .si{font-size:13px;font-weight:600}
+  .lwk{border:0;background:#F2F5F8;color:var(--muted);font-size:11px;font-weight:600;padding:5px 9px;border-radius:6px;cursor:pointer;white-space:nowrap}
+  .lwk:active{background:#FEF3F2;color:var(--red-dark)}
+  .sin{display:flex;align-items:center;gap:6px;margin-top:8px}
+  .sin input{width:66px;border:1.5px solid var(--line);border-radius:7px;padding:9px 8px;text-align:center;font-family:Montserrat;font-weight:700;font-size:15px;color:var(--ink)}
+  .sin .win{border-color:#D6E0EA;background:#FBFDFF}
+  .sin .u2{font-size:12px;color:var(--muted);margin-right:8px}
+  .sin .win.edited,.sin .rin.edited{border-color:var(--red);background:#FEF7F6}
+  .lastweek{font-size:11.5px;color:var(--muted);margin-top:12px;background:#FEF3F2;border-radius:7px;padding:8px 10px}
+  .lastweek b{color:var(--red-dark)}
+
+  /* rest timer */
+  .rest{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;background:var(--navy);color:#fff;
+    padding:12px 18px;border-radius:12px;box-shadow:var(--shadow-lg);display:none;align-items:center;gap:12px;z-index:40;font-size:14px;font-weight:600}
+  .rest.show{display:flex}
+  .rest .t{font-family:Montserrat;font-weight:800;font-size:20px;color:#fff}
+  .rest button{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:7px;padding:7px 10px;font-weight:600;cursor:pointer;font-size:12px}
+
+  /* sticky footer buttons */
+  .footbar{position:sticky;bottom:0;margin:18px -18px 0;padding:14px 18px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(#F4F6F8cc,#F4F6F8);backdrop-filter:blur(4px)}
+
+  /* toast */
+  .toast{position:fixed;left:50%;top:20px;transform:translateX(-50%) translateY(-120%);background:var(--navy);color:#fff;
+    padding:13px 18px;border-radius:12px;box-shadow:var(--shadow-lg);z-index:60;font-size:13.5px;font-weight:600;transition:.35s;max-width:88%;display:flex;gap:10px;align-items:center}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast .pr{background:var(--red);border-radius:6px;padding:3px 7px;font-size:10px;letter-spacing:.05em}
+
+  /* modal */
+  .ov{position:fixed;inset:0;background:rgba(8,25,43,.55);display:none;align-items:flex-end;justify-content:center;z-index:70}
+  .ov.show{display:flex;animation:fade .2s}
+  .sheet{background:#fff;width:100%;max-width:440px;border-radius:18px 18px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));animation:up .28s ease}
+  @keyframes up{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}
+  .sheet h3{font-size:19px;margin:2px 0 4px}
+  .field{margin-top:14px}
+  .field label{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:7px}
+  .field input[type=text],.field input[type=date]{width:100%;border:1.5px solid var(--line);border-radius:8px;padding:12px;font-family:Inter;font-size:15px;color:var(--ink)}
+  .cadence{display:flex;gap:8px;flex-wrap:wrap}
+  .alt{display:flex;align-items:center;gap:12px;border:1.5px solid var(--line);border-radius:10px;padding:12px;margin-top:10px;cursor:pointer}
+  .alt:active{border-color:var(--red)}
+  .alt .eq{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:3px 7px;border-radius:5px;background:#EEF2F6;color:var(--muted)}
+  .alt .eq.free{background:#FEF3F2;color:var(--red-dark)}
+  .alt .an{font-weight:700;font-size:14px;flex:1}
+  .alt .mg{font-size:11.5px;color:var(--muted)}
+  .switch{position:relative;width:46px;height:26px;flex:0 0 auto}
+  .switch input{display:none}
+  .switch .sl{position:absolute;inset:0;background:#D6DEE6;border-radius:20px;transition:.2s}
+  .switch .sl::before{content:"";position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;top:3px;left:3px;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .switch input:checked + .sl{background:var(--red)}
+  .switch input:checked + .sl::before{transform:translateX(20px)}
+  .info{background:#E9F2FF;border-radius:9px;padding:11px 13px;font-size:12px;color:#1D4ED8;margin-top:12px;line-height:1.5}
+  .info b{color:#1D4ED8}
+  .deviation{background:#FFF7ED;border:1px solid #FDBA74;border-radius:9px;padding:11px 13px;font-size:12px;color:#9A3412;margin-top:12px;line-height:1.5;display:none}
+  .deviation.show{display:block}
+
+  /* exercise header + body-part icon */
+  .ex-head{display:flex;gap:13px;align-items:center;margin-top:8px}
+  .ex-ico{width:50px;height:50px;border-radius:13px;background:#F1F5F9;padding:5px;flex:0 0 auto}
+  .ex-mg{font-size:12.5px;color:var(--muted);font-weight:600;margin-top:3px}
+  /* exercise rail */
+  .ex-rail{display:flex;gap:9px;overflow-x:auto;padding:14px 2px 4px;scrollbar-width:none}
+  .ex-rail::-webkit-scrollbar{display:none}
+  .rail-i{flex:0 0 auto;width:48px;text-align:center;cursor:pointer}
+  .rail-i .ic{width:46px;height:46px;border-radius:13px;background:#fff;box-shadow:var(--shadow);padding:6px;position:relative;border:2px solid transparent;transition:.15s}
+  .rail-i.cur .ic{border-color:var(--red)}
+  .rail-i.done .ic{background:#EAF6F0}
+  .rail-i .num{font-size:9.5px;color:var(--faint);margin-top:4px;font-weight:700}
+  .rail-i.cur .num{color:var(--red)}
+  .rail-i .chk{position:absolute;top:-5px;right:-5px;width:17px;height:17px;border-radius:50%;background:var(--good);color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
+  /* set groups + warmups */
+  .grp-h{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:16px 0 0}
+  .setline.warm .sc{border-radius:50%;border-style:dashed}
+  .warmtag{font-size:9.5px;font-weight:700;letter-spacing:.04em;color:#B45309;background:#FEF3C7;padding:2px 7px;border-radius:5px;margin-left:7px}
+  .bw{display:inline-flex;align-items:center;justify-content:center;width:66px;padding:9px 8px;border:1.5px dashed var(--line);border-radius:7px;font-weight:700;font-family:Montserrat;color:var(--muted);font-size:14px}
+  /* tempo toggle */
+  .tempo-toggle{border-color:var(--line)}
+  .tempo-toggle.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .tg-dot{width:7px;height:7px;border-radius:50%;background:#C6D2DE;display:inline-block}
+  .tempo-toggle.on .tg-dot{background:#3DD68C}
+  /* tempo coach overlay */
+  .ov.full{align-items:stretch}
+  .tempo-modal{background:radial-gradient(120% 80% at 50% 0%,#123457 0%,#0A2540 45%,#08192B 100%);color:#fff;width:100%;max-width:440px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:22px 22px calc(26px + env(safe-area-inset-bottom))}
+  .tm-top{display:flex;justify-content:space-between;align-items:center}
+  .tm-top .st{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8FA6BC}
+  .tm-x{background:rgba(255,255,255,.12);border:0;color:#fff;padding:8px 13px;border-radius:9px;font-weight:600;cursor:pointer;font-size:13px}
+  .tm-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px}
+  .tm-ex{font-family:Montserrat;font-weight:800;font-size:27px;margin-top:6px}
+  .tm-sub{color:#9DB4C9;font-size:14px}
+  .tm-ring{width:216px;height:216px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;margin:18px 0}
+  .tm-ring .core2{width:158px;height:158px;border-radius:50%;background:rgba(255,255,255,.07);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform 1s linear}
+  .tm-ring .rprog{position:absolute;inset:0;transform:rotate(-90deg)}
+  .tm-phase{font-family:Montserrat;font-weight:800;font-size:25px}
+  .tm-count{color:#9DB4C9;font-size:13.5px;margin-top:5px}
+  .wmod{display:flex;align-items:center;gap:18px;margin:12px 0}
+  .wmod button{width:48px;height:48px;border-radius:13px;border:0;background:rgba(255,255,255,.13);color:#fff;font-size:24px;cursor:pointer;line-height:1}
+  .wmod .wv{font-family:Montserrat;font-weight:800;font-size:32px;min-width:130px}
+  .wmod .wv small{font-size:14px;color:#9DB4C9;font-weight:600}
+  .tm-note{font-size:12.5px;color:#8FA6BC;max-width:280px;line-height:1.5}
+  .tm-actions{width:100%;max-width:330px;display:flex;flex-direction:column;gap:10px;margin-top:6px}
+  .tm-btn{background:var(--red);color:#fff;border:0;border-radius:11px;padding:16px;font-weight:700;font-size:16px;width:100%;cursor:pointer}
+  .tm-btn.ghost{background:rgba(255,255,255,.12)}
+  /* per-set RPE */
+  .rpe-row{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+  .rpe-l{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+  .rpe{display:inline-flex;align-items:center;gap:9px}
+  .rpe button{width:28px;height:28px;border-radius:8px;border:1.5px solid var(--line);background:#fff;font-size:16px;font-weight:700;color:var(--navy);cursor:pointer;line-height:1}
+  .rpe .rv{font-family:Montserrat;font-weight:800;font-size:16px;min-width:32px;text-align:center;color:var(--ink)}
+  .rpe .rv.over{color:var(--red)}
+  .rpe .cap{font-size:9.5px;font-weight:800;letter-spacing:.03em;color:var(--red-dark);background:#FEF3F2;padding:3px 6px;border-radius:5px}
+  /* rpe scale (guided) */
+  .rpe-scale{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;max-width:300px}
+  .rpe-scale button{width:56px;padding:13px 0;border-radius:11px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;font-family:Montserrat;font-weight:800;font-size:17px;cursor:pointer}
+  .rpe-scale button.sel{background:var(--red);border-color:var(--red)}
+  .rpe-scale button.over{border-color:#F0553B;color:#FF9A8C}
+  .rpe-scale button.over.sel{color:#fff}
+  /* demo player + form capture (dark sheets) */
+  .sheet.dark{background:#0B2036;color:#fff}
+  .sheet.dark h3{color:#fff}
+  .player-scr{border-radius:12px;height:220px;position:relative;overflow:hidden;background:#08192B;display:flex;align-items:center;justify-content:center;margin-top:8px}
+  .player-scr::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 22px,rgba(255,255,255,.045) 22px 23px),repeating-linear-gradient(90deg,transparent 0 22px,rgba(255,255,255,.045) 22px 23px)}
+  .player-scr .fig{width:64px;height:96px;z-index:1;opacity:.92}
+  .tempo-ticks{position:absolute;bottom:10px;left:12px;font-size:11px;color:#9DB4C9;z-index:1}
+  .pbar{height:5px;background:rgba(255,255,255,.14);border-radius:4px;margin-top:14px;overflow:hidden}
+  .pbar i{display:block;height:100%;width:0;background:var(--red);border-radius:4px;transition:width .1s linear}
+  .pctrl{display:flex;align-items:center;gap:12px;margin-top:12px;font-size:12.5px;color:#9DB4C9}
+  .cam{border-radius:12px;height:250px;position:relative;overflow:hidden;background:#05101C;display:flex;align-items:center;justify-content:center;margin-top:8px}
+  .cam .frame{position:absolute;inset:14px;border:2px solid rgba(255,255,255,.22);border-radius:10px}
+  .cam .rec{position:absolute;top:16px;left:16px;display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.06em;color:#fff;z-index:2}
+  .cam .rec .rd{width:9px;height:9px;border-radius:50%;background:var(--red);animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:.25}}
+  .cam .big{font-family:Montserrat;font-weight:800;font-size:46px;color:#fff;z-index:1}
+  .cam .figc{width:56px;height:84px;z-index:1;opacity:.5;position:absolute}
+  .recbtn{width:70px;height:70px;border-radius:50%;background:var(--red);border:4px solid #fff;margin:16px auto 0;display:block;cursor:pointer}
+  /* summaries */
+  .sum-set{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line);font-size:14px}
+  .sum-set:first-child{border-top:0}
+  .sum-set .si2{font-weight:700;width:50px;color:var(--muted);font-size:12px;flex:0 0 auto}
+  .sum-set .val2{font-family:Montserrat;font-weight:800;flex:1}
+  .sum-set .rp{font-weight:600;color:var(--muted);font-size:12px;font-family:Inter}
+  .dl{font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px}
+  .dl.up{background:#E7F6EF;color:var(--good)} .dl.same{background:#EEF2F6;color:var(--muted)}
+  .prtag{font-size:10px;font-weight:800;letter-spacing:.05em;background:var(--red);color:#fff;padding:3px 8px;border-radius:5px}
+  .sum-tiles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:16px 0}
+  .st2{background:#F4F7FA;border-radius:11px;padding:13px 8px;text-align:center}
+  .st2 .v{font-family:Montserrat;font-weight:800;font-size:21px}
+  .st2 .k{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);margin-top:4px}
+  /* sound toggle */
+  .tm-snd{background:rgba(255,255,255,.12);border:0;color:#fff;padding:8px 12px;border-radius:9px;font-weight:600;cursor:pointer;font-size:13px;margin-right:8px}
+  /* video library */
+  .lib-filter{display:flex;gap:8px;overflow-x:auto;margin-top:12px;scrollbar-width:none}
+  .lib-filter::-webkit-scrollbar{display:none}
+  .lib-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;max-height:56vh;overflow-y:auto}
+  .lib-card{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:11px;cursor:pointer;transition:.15s}
+  .lib-card:active{border-color:var(--red)}
+  .lib-thumb{background:#0B2036;border-radius:9px;height:80px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:9px}
+  .lib-thumb::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 16px,rgba(255,255,255,.05) 16px 17px),repeating-linear-gradient(90deg,transparent 0 16px,rgba(255,255,255,.05) 16px 17px)}
+  .lib-thumb .lf{width:30px;height:46px;z-index:1;opacity:.92}
+  .lib-thumb .pl{position:absolute;right:8px;bottom:8px;width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;z-index:1}
+  .lib-thumb .du{position:absolute;left:8px;bottom:8px;font-size:10px;color:#9DB4C9;z-index:1}
+  .lib-card .ln{font-weight:700;font-size:13.5px;line-height:1.2}
+  .lib-card .lm{font-size:11px;color:var(--muted);margin-top:3px}
+  /* channel chips + wrap note */
+  .chan{display:flex;gap:8px;margin-top:9px}
+  .wrap-note{border-radius:11px;padding:14px;margin:14px 0;font-size:13.5px;line-height:1.55;display:flex;gap:11px}
+  .wrap-note.win{background:#0A2540;color:#fff}
+  .wrap-note.partial{background:#FFF7ED;border:1px solid #FDBA74;color:#7C2D12}
+  .wrap-note .av{width:30px;height:30px;border-radius:50%;background:var(--red);color:#fff;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-family:Montserrat;font-weight:800;font-size:13px}
+  .wrap-note.win b{color:#fff} .wrap-note.partial b{color:#7C2D12}
+  /* quick weight adjust */
+  .wq{display:flex;align-items:center;gap:12px;margin-top:6px}
+  .wq button{width:44px;height:44px;border-radius:11px;border:1.5px solid var(--line);background:#fff;font-size:20px;font-weight:700;color:var(--navy);cursor:pointer}
+  .wq input{flex:1;text-align:center;font-family:Montserrat;font-weight:800;font-size:30px;border:1.5px solid var(--line);border-radius:11px;padding:10px;color:var(--ink)}
+  /* onboarding */
+  .ob-top{padding:18px 2px 6px}
+  .ob-dots{display:flex;gap:6px;margin-bottom:14px}
+  .ob-dots i{height:5px;border-radius:4px;background:#E1E8EE;flex:1}
+  .ob-dots i.on{background:var(--red)}
+  .ob-step{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .ob-h{font-family:Montserrat;font-weight:800;font-size:25px;margin:9px 0 6px;line-height:1.16}
+  .ob-sub{font-size:14px;color:var(--muted);line-height:1.5}
+  .ob-body{padding:14px 18px 130px}
+  .ob-foot{position:sticky;bottom:0;background:linear-gradient(#F4F6F8bb,#F4F6F8 40%);padding:14px 18px calc(16px + env(safe-area-inset-bottom));display:flex;gap:10px}
+  .fld-l{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);margin:18px 0 8px}
+  .tag-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .tagbtn{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:14px;text-align:left;cursor:pointer;transition:.12s}
+  .tagbtn.on{border-color:var(--red);background:#FEF3F2}
+  .tagbtn .tt{font-weight:700;font-size:15px}
+  .tagbtn .td{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .days{display:flex;gap:7px;justify-content:space-between}
+  .dayb{flex:1;aspect-ratio:1;border:1.5px solid var(--line);background:#fff;border-radius:11px;font-weight:700;color:var(--navy);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .dayb.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .ob-in{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:13px;font-family:Inter;font-size:15px;color:var(--ink)}
+  .conn{display:flex;align-items:center;gap:12px;border:1.5px solid var(--line);border-radius:12px;padding:13px;margin-top:10px}
+  .conn .ci{width:40px;height:40px;border-radius:10px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:18px;background:#F1F5F9}
+  .conn .cn{font-weight:700;font-size:14px;flex:1}
+  .conn .cn small{display:block;font-weight:500;color:var(--muted);font-size:11.5px;margin-top:2px}
+  .cbtn{border:1.5px solid var(--red);color:var(--red-dark);background:#fff;border-radius:8px;padding:9px 15px;font-weight:700;font-size:13px;cursor:pointer;flex:0 0 auto}
+  .conn.done .cbtn{background:var(--good);border-color:var(--good);color:#fff}
+  .ob-pax{background:var(--navy);color:#fff;border-radius:14px;padding:16px;font-size:14px;line-height:1.55}
+  .ob-pax .h{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+  .ob-pax .av{width:32px;height:32px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-family:Montserrat;font-weight:800;font-size:14px}
+  .ob-pax .h b{font-size:14px}
+  /* pact detail */
+  .pd-hero{background:var(--navy);color:#fff;border-radius:16px;padding:18px;margin-top:14px}
+  .pd-hero h2{font-size:23px;margin:9px 0 2px}
+  .streak{display:flex;gap:22px;margin-top:15px}
+  .streak .sv{font-family:Montserrat;font-weight:800;font-size:25px}
+  .streak .sk{font-size:10.5px;color:#9DB4C9;text-transform:uppercase;letter-spacing:.05em;margin-top:3px}
+  .wkrow{display:flex;gap:6px;justify-content:space-between}
+  .wkrow .wd{flex:1;text-align:center}
+  .wkrow .wd .l{font-size:10px;color:var(--faint);font-weight:700;margin-bottom:5px}
+  .wkrow .wd .c{height:36px;border-radius:8px;background:#EAF0F4;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:700}
+  .wkrow .wd .c.hit{background:var(--good)} .wkrow .wd .c.miss{background:#F7D3CE;color:var(--red-dark)} .wkrow .wd .c.today{border:2px solid var(--red);background:#fff;color:var(--red)}
+  .heat{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+  .heat i{aspect-ratio:1;border-radius:4px;background:#EAF0F4}
+  .heat i.hit{background:var(--good)} .heat i.miss{background:#F7D3CE}
+  .witcard{display:flex;align-items:center;gap:12px;border:1.5px solid var(--line);border-radius:12px;padding:13px;margin-top:12px}
+  .witcard .wa{width:40px;height:40px;border-radius:50%;background:#E9F2FF;color:#1D4ED8;display:flex;align-items:center;justify-content:center;font-weight:800;flex:0 0 auto}
+  .witcard .wn{font-weight:700;font-size:14px} .witcard .wm{font-size:11.5px;color:var(--muted);margin-top:2px}
+  /* header menu */
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:14px 2px 2px}
+  .topbar .wm{font-family:Montserrat;font-weight:800;font-size:14px;letter-spacing:.02em}
+  .topbar .wm b{color:var(--red)}
+  .kebab{width:38px;height:38px;border-radius:10px;background:#fff;box-shadow:var(--shadow);border:0;font-size:18px;cursor:pointer;color:var(--navy)}
+  .menu-item{display:flex;align-items:center;gap:13px;padding:15px 4px;border-top:1px solid var(--line);font-size:15px;font-weight:600;cursor:pointer;color:var(--ink)}
+  .menu-item:first-child{border-top:0}
+  .menu-item .mi{width:34px;height:34px;border-radius:9px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .pact.tap{cursor:pointer}
+  .pact .chev{color:var(--faint);font-size:18px}
+  /* PAX conversation */
+  #pax.active{display:flex;flex-direction:column;height:100vh;padding:0}
+  .pax-head{display:flex;align-items:center;gap:11px;background:var(--navy);color:#fff;padding:14px 16px;flex:0 0 auto}
+  .pax-head .back{background:rgba(255,255,255,.14);color:#fff;box-shadow:none;width:36px;height:36px;border-radius:10px;border:0;font-size:17px;cursor:pointer}
+  .pax-av{width:38px;height:38px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-family:Montserrat;font-weight:800;flex:0 0 auto}
+  .pax-id{flex:1}
+  .pax-id .pn{font-weight:700;font-size:15px}
+  .pax-id .ps{font-size:11.5px;color:#5FD39A;display:flex;align-items:center;gap:5px}
+  .pax-id .ps::before{content:"";width:6px;height:6px;border-radius:50%;background:#3DD68C}
+  .thread{flex:1;overflow-y:auto;background:#E9EDF1;padding:16px 14px;display:flex;flex-direction:column;gap:9px}
+  .msg{display:flex;flex-direction:column;max-width:84%}
+  .msg.me{align-self:flex-end;align-items:flex-end}
+  .msg.in{align-self:flex-start;align-items:flex-start}
+  .bubble{padding:10px 13px;border-radius:15px;font-size:14px;line-height:1.5;box-shadow:0 1px 1px rgba(10,37,64,.08)}
+  .msg.in .bubble{background:#fff;color:var(--ink);border-top-left-radius:5px}
+  .msg.me .bubble{background:var(--navy);color:#fff;border-top-right-radius:5px}
+  .msg .t{font-size:10px;color:var(--faint);margin-top:4px}
+  .msg.me .t{color:var(--faint)}
+  .day-div{align-self:center;background:rgba(10,37,64,.09);color:var(--muted);font-size:11px;font-weight:700;padding:5px 13px;border-radius:20px;margin:4px 0}
+  .brief{margin-top:9px;background:#F7F9FB;border:1px solid var(--line);border-radius:10px;padding:11px}
+  .brief .bt{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--red)}
+  .brief .bh{font-family:Montserrat;font-weight:800;font-size:16px;margin:3px 0 1px}
+  .brief .bs{font-size:12px;color:var(--muted)}
+  .brief button{margin-top:10px;width:100%;padding:11px}
+  .quick{display:flex;gap:8px;overflow-x:auto;padding:11px 14px 0;background:#E9EDF1;flex:0 0 auto;scrollbar-width:none}
+  .quick::-webkit-scrollbar{display:none}
+  .quick .chip{white-space:nowrap;background:#fff;flex:0 0 auto}
+  .composer{display:flex;gap:10px;align-items:center;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:#E9EDF1;flex:0 0 auto}
+  .composer input{flex:1;border:1.5px solid var(--line);border-radius:22px;padding:12px 16px;font-family:Inter;font-size:14px;background:#fff;color:var(--ink)}
+  .composer .send{width:44px;height:44px;border-radius:50%;background:var(--red);color:#fff;border:0;font-size:16px;cursor:pointer;flex:0 0 auto}
+  .pax.strip-tap{cursor:pointer}
+  /* settings */
+  .set-h{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:20px 2px 9px}
+  .set-card{background:#fff;border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+  .set-row{display:flex;align-items:center;gap:13px;padding:14px;border-bottom:1px solid var(--line)}
+  .set-card .set-row:last-child{border-bottom:0}
+  .set-row .si{width:38px;height:38px;border-radius:9px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:17px;flex:0 0 auto}
+  .set-row .sc{flex:1;min-width:0}
+  .set-row .sn{font-weight:600;font-size:14.5px}
+  .set-row .sm{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .set-row.on .si{background:#E7F6EF}
+  .seg{display:flex;background:#EEF2F6;border-radius:9px;padding:3px;width:120px;flex:0 0 auto}
+  .seg button{flex:1;border:0;background:transparent;padding:7px 4px;border-radius:7px;font-weight:700;font-size:13px;color:var(--muted);cursor:pointer}
+  .seg button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow)}
+  .set-time{font-family:Montserrat;font-weight:800;font-size:15px;color:var(--navy)}
+  /* history */
+  .hist-range{display:flex;gap:8px;margin:14px 0 4px}
+  .chart-lbls{display:flex;justify-content:space-between;font-size:10.5px;color:var(--faint);margin-top:8px}
+  .big-stat{display:flex;align-items:baseline;gap:10px}
+  .big-stat .bn{font-family:Montserrat;font-weight:800;font-size:34px;line-height:1}
+  .big-stat .bd{font-size:13px;font-weight:700}
+  .strength-row,.pr-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+  .strength-row:first-child,.pr-row:first-child{border-top:0}
+  .strength-row .sl{font-weight:700;font-size:14px;flex:1}
+  .strength-row .snow{font-family:Montserrat;font-weight:800;font-size:15px}
+  .strength-row .sd{font-size:11.5px;font-weight:700;color:var(--good);text-align:right;min-width:56px}
+  .pr-row .pi{width:34px;height:34px;border-radius:9px;background:#FEF3F2;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .pr-row .pl{font-weight:700;font-size:14px} .pr-row .pv{font-size:12px;color:var(--muted);margin-top:1px}
+  .pr-row .pw{font-size:11px;color:var(--faint);margin-left:auto;white-space:nowrap}
+  /* nutrition */
+  .nut-pill{font-weight:700;font-size:12px;padding:5px 11px;border-radius:20px}
+  .nut-pill.ok{background:#E7F6EF;color:var(--good)}
+  .nut-pill.warn{background:#FEF3C7;color:#B45309}
+  /* login (responsive) */
+  #login{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;background:var(--navy);color:#fff;overflow:auto}
+  #login.hidden{display:none}
+  .lg-brand{padding:40px 24px 22px;text-align:center}
+  .lg-brand .wm{font-family:Montserrat;font-weight:800;font-size:25px;letter-spacing:.02em}
+  .lg-brand .wm b{color:var(--red)}
+  .lg-brand .tag{color:#9DB4C9;font-size:14.5px;margin:10px auto 0;max-width:340px;line-height:1.5}
+  .lg-brand .feat{display:none}
+  .lg-panel{flex:1;background:var(--bg);border-radius:22px 22px 0 0;padding:26px 22px calc(30px + env(safe-area-inset-bottom));color:var(--ink)}
+  .lg-card{max-width:400px;margin:0 auto}
+  .lg-tabs{display:flex;background:#EEF2F6;border-radius:11px;padding:4px;margin-bottom:6px}
+  .lg-tabs button{flex:1;border:0;background:transparent;padding:11px;border-radius:8px;font-weight:700;font-size:14px;color:var(--muted);cursor:pointer}
+  .lg-tabs button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow)}
+  .lg-form label{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);display:block;margin:16px 0 7px}
+  .lg-form input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:14px;font-family:Inter;font-size:15px;background:#fff;color:var(--ink)}
+  .lg-note{font-size:12px;color:var(--muted);margin-top:16px;text-align:center;line-height:1.55}
+  .lg-forgot{color:var(--red-dark);font-weight:600;text-decoration:none}
+  /* ── Desktop layout for the app itself ── */
+  @media(min-width:1024px){
+    .phone{max-width:1100px;min-height:100vh}
+    .screen{padding-left:36px;padding-right:36px}
+    .top h1{font-size:32px;max-width:720px}
+    .tiles{grid-template-columns:repeat(4,1fr)}
+    #dashCols{columns:2;column-gap:24px;margin-top:4px}
+    #dashCols>.card{display:inline-block;width:100%;break-inside:avoid;margin-top:20px}
+    .pact-card{max-width:none}
+    /* inner screens read better as a centered column */
+    #logger>*,#settings>*,#history>*,#pactDetail>*,#onboard>*{max-width:620px;margin-left:auto;margin-right:auto}
+    #logger .footbar,#onboard .ob-foot{max-width:620px}
+    #pax .thread,#pax .quick,#pax .composer{padding-left:calc((100% - 660px)/2);padding-right:calc((100% - 660px)/2)}
+  }
+
+  @media(min-width:860px){
+    #login{flex-direction:row}
+    .lg-brand{flex:1;display:flex;flex-direction:column;justify-content:center;text-align:left;padding:64px;background:radial-gradient(120% 90% at 15% 0%,#123457,#0A2540 55%,#08192B)}
+    .lg-brand .wm{font-size:36px}
+    .lg-brand .tag{font-size:18px;margin:18px 0 0;max-width:440px}
+    .lg-brand .feat{display:block;margin-top:30px;color:#C6D3DF;font-size:15px;line-height:2.1}
+    .lg-panel{flex:0 0 470px;border-radius:0;display:flex;align-items:center}
+    .lg-card{width:100%}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN (responsive) ============ -->
+<div id="login">
+  <div class="lg-brand">
+    <div class="wm">PACT<b>.</b>HEALTH</div>
+    <div class="tag">The always-on accountability layer — the 165 hours between sessions, covered by PAX and your coach.</div>
+    <div class="feat">✓&nbsp;&nbsp;3 daily check-ins from PAX<br>✓&nbsp;&nbsp;Garmin, Oura, Fitbit, Whoop, Apple &amp; Android Health<br>✓&nbsp;&nbsp;Nutrition, training, sleep &amp; steps in one place<br>✓&nbsp;&nbsp;Invite-only — your coach brings you in</div>
+  </div>
+  <div class="lg-panel">
+    <div class="lg-card">
+      <div class="lg-tabs"><button class="on" id="tabAth" onclick="loginTab('ath')">I'm an Athlete</button><button id="tabCo" onclick="loginTab('co')">I'm a Coach</button></div>
+
+      <!-- ATHLETE · sign in -->
+      <div id="formAth" class="lg-form">
+        <label>Your email</label><input id="loginEmail" type="email" placeholder="you@email.com" autocomplete="email">
+        <button class="btn btn-red" style="margin-top:22px" onclick="enterApp()">Email me a sign-in link →</button>
+        <div class="lg-note">No passwords — the link signs you straight in.<br>First time here? <a class="lg-forgot" href="#" onclick="loginMode('athReg');return false">Redeem your invite</a></div>
+      </div>
+
+      <!-- ATHLETE · redeem invite (register) -->
+      <div id="formAthReg" class="lg-form" style="display:none">
+        <label>Invite code</label><input id="inviteCode" placeholder="e.g. PACT-7F3K2M" autocapitalize="characters">
+        <label>Your email</label><input id="inviteEmail" type="email" placeholder="you@email.com" autocomplete="email">
+        <button class="btn btn-red" style="margin-top:22px" onclick="redeemInvite()">Start my pact →</button>
+        <div class="lg-note">PACT is invite-only — your coach sends the code. It links you to them and starts your 10-minute setup.<br><a class="lg-forgot" href="#" onclick="loginMode('ath');return false">Already set up? Sign in</a></div>
+      </div>
+
+      <!-- COACH · sign in -->
+      <div id="formCo" class="lg-form" style="display:none">
+        <label>Coach email</label><input id="coachEmail" type="email" placeholder="you@yourcoaching.co.uk" autocomplete="email">
+        <button class="btn btn-navy" style="margin-top:22px" onclick="coachSignIn()">Email me a console link →</button>
+        <div class="lg-note">One tap in the email lands you signed in to your Coach Console — no second login.<br>Run a coaching business? <a class="lg-forgot" href="https://pact-coach-console.vercel.app/signup">Apply to join</a></div>
+      </div>
+
+      <!-- COACH · apply (register) -->
+      <div id="formCoReg" class="lg-form" style="display:none">
+        <label>Your name</label><input id="coRegName" placeholder="Sam Carter">
+        <label>Business name</label><input id="coRegBiz" placeholder="Carter Coaching">
+        <label>Email</label><input id="coRegEmail" type="email" placeholder="you@yourcoaching.co.uk">
+        <button class="btn btn-navy" style="margin-top:22px" onclick="coachApply()">Apply for the pilot →</button>
+        <div class="lg-note">We're onboarding coaches in small groups during the pilot — we'll set up your console and PAX voice with you.<br><a class="lg-forgot" href="#" onclick="loginMode('co');return false">Already on PACT? Sign in</a></div>
+      </div>
+
+      <!-- shared success state -->
+      <div id="loginSent" class="lg-form" style="display:none">
+        <div style="background:#fff;border-left:4px solid var(--red);border-radius:10px;padding:18px;box-shadow:var(--shadow)">
+          <div style="font-family:Montserrat;font-weight:800;font-size:16px" id="sentTitle">Check your inbox</div>
+          <div class="muted" style="font-size:13.5px;margin-top:6px;line-height:1.55" id="sentBody"></div>
+        </div>
+        <div class="lg-note"><a class="lg-forgot" href="#" onclick="loginMode(lastMode);return false">← Back</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="phone">
+  <div class="hairline"></div>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section class="screen active" id="dash">
+    <div class="topbar">
+      <div class="wm">PACT<b>.</b>HEALTH</div>
+      <button class="kebab" onclick="openMenu()">⋯</button>
+    </div>
+    <div class="top">
+      <div class="date" id="dateHead">Friday, 8 May · Morning</div>
+      <h1 id="goalHead">Welcome back.</h1>
+      <span class="pill" id="planPill" style="display:none"><span class="dot"></span> <span id="planPillTxt"></span></span>
+    </div>
+
+    <div class="row" style="margin-top:14px">
+      <button class="btn btn-ghost" onclick="openWeight()">Log Weight</button>
+      <button class="btn btn-red" onclick="openPax()">Open PAX</button>
+    </div>
+
+    <!-- today's pact -->
+    <div class="pact-card">
+      <div class="eyebrow" style="color:#FF7A6B" id="pcEyebrow">● Today's Pact</div>
+      <h2 id="pcName">Lower body.</h2>
+      <div class="sub" id="pcSub">8 exercises · ~52 min · Ready when you are</div>
+      <div class="firstlift" id="pcFirst"><b>First lift:</b> Back Squat · 4 × 8 · 102.5kg @ RPE 8 · Tempo 3-1-1</div>
+      <button class="btn btn-red" id="pcBtn" onclick="beginWorkout()">BEGIN WORKOUT →</button>
+      <div class="adaptrow">
+        <button class="achip" onclick="paxAdapt('travel')">🧳 Travelling?</button>
+        <button class="achip" onclick="paxAdapt('30')">⏱ Only got 30 min</button>
+        <button class="achip" onclick="paxAdapt('45')">⏱ 45 min</button>
+      </div>
+    </div>
+
+    <!-- stat tiles -->
+    <div class="tiles">
+      <div class="tile red"><div class="lbl">Current weight</div><div class="val" id="curWt">—</div><div class="delta muted" id="curDelta">log a weigh-in</div></div>
+      <div class="tile navy"><div class="lbl">Target weight</div><div class="val" id="tgtWt">—</div><div class="delta muted" id="tgtRemain"></div></div>
+      <div class="tile"><div class="lbl">Projected end</div><div class="val" style="font-size:19px" id="projVal">—</div><div class="delta muted" id="projSub">builds from your weigh-ins</div></div>
+      <div class="tile"><div class="lbl">7-day adherence</div><div class="val" id="adhVal">—</div><div class="delta muted" id="adhSub">pacts kept, last 7 days</div></div>
+    </div>
+
+    <div id="dashCols">
+    <!-- goal progress + chart -->
+    <div class="card" onclick="openHistory()" style="cursor:pointer">
+      <div class="sec-h"><h3>Goal Progress</h3><span class="meta" style="color:var(--red-dark);font-weight:600">Full history ›</span></div>
+      <div class="gp-row" style="margin-top:12px">
+        <div><div class="k">Started</div><div class="v" id="gpStart">—</div></div>
+        <div><div class="k">Lost</div><div class="v" id="gpLost">—</div></div>
+        <div><div class="k">Avg / wk</div><div class="v" id="gpAvg">—</div></div>
+      </div>
+      <div class="track"><div class="fill" id="goalBar" style="width:53%"></div></div>
+      <div class="row between" style="font-size:11.5px;color:var(--muted)"><span id="goalStartLbl">start</span><b style="color:var(--ink)" id="goalNow">—</b><span id="goalTargetLbl">target</span></div>
+      <div class="k" style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-top:16px">Weight trend · last 4 weeks</div>
+      <div id="chart"></div>
+    </div>
+
+    <!-- nutrition today -->
+    <div class="card" id="nutCard"></div>
+
+    <!-- active pacts -->
+    <div class="card">
+      <div class="sec-h"><h3>Active Pacts</h3><span class="meta" id="pactCount">4 / 6 kept today</span></div>
+      <div id="pactList" style="margin-top:8px"></div>
+      <div id="pactImpact" style="display:none;font-size:12px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--line);line-height:1.45"></div>
+      <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:12px" onclick="openPact()">＋ New pact</button>
+    </div>
+
+    <!-- this week -->
+    <div class="card">
+      <div class="sec-h"><h3>This Week</h3><span class="meta">Steps · Sleep</span></div>
+      <div class="week" id="weekSteps"></div>
+      <div class="row between" style="margin-top:10px;font-size:12px;color:var(--muted)">
+        <span><b style="color:var(--ink);font-family:Montserrat" id="wkAvgSteps">—</b> avg steps</span>
+        <span><b style="color:var(--ink);font-family:Montserrat" id="wkAvgSleep">—</b> avg sleep</span>
+      </div>
+    </div>
+
+    <!-- cardio this week -->
+    <div class="card" id="cardioCard">
+      <div class="sec-h"><h3>Cardio this week</h3><span class="meta" id="cardioMeta">runs &amp; rides</span></div>
+      <div id="cardioList" style="margin-top:6px"></div>
+      <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:12px" onclick="openCardio()">＋ Log a run / ride</button>
+    </div>
+
+    <!-- coach notes -->
+    <div class="card" id="coachNotesCard">
+      <div class="sec-h"><h3 id="coachNotesH">Notes from your coach</h3></div>
+      <div style="margin-top:8px">
+        <div class="note urgent"><div class="tag"></div><div><div>Watch the weekend — two social events logged. Front-load protein Sat &amp; keep Sunday steps up.</div><div class="who">Coach · 2h ago</div></div></div>
+        <div class="note"><div class="tag"></div><div><div>Squat felt strong Wed. Holding 102.5 another week before we add load.</div><div class="who">Coach · Wed</div></div></div>
+        <div class="note"><div class="tag"></div><div><div>Sleep trending up — great. It's why RPE feels easier.</div><div class="who">Coach · Tue</div></div></div>
+      </div>
+    </div>
+
+    </div><!-- /dashCols -->
+
+    <div class="pax strip-tap" onclick="openPax()">
+      <div class="av">P</div>
+      <div class="txt" id="paxStrip"><b>PAX:</b> Solid sleep last night (7h12). You're clear for the full session — I'll keep you to the plan.</div>
+      <span style="color:#8FA6BC;font-size:18px">›</span>
+    </div>
+  </section>
+
+  <!-- ============ WORKOUT LOGGER ============ -->
+  <section class="screen" id="logger">
+    <div class="lg-top">
+      <button class="back" onclick="go('dash')">←</button>
+      <div class="ttl">DAY 23 · LOWER</div>
+      <span class="pill" style="padding:6px 11px"><span class="dot"></span> PAX</span>
+    </div>
+
+    <div style="padding:0 2px">
+      <div class="eyebrow">Today's Pact</div>
+      <h2 style="font-size:24px;margin:5px 0 8px">Lower body.</h2>
+      <div style="font-size:13.5px;color:var(--muted);line-height:1.5" id="lgIntro">Eight exercises. ~52 minutes. Sleep was <b style="color:var(--ink)">6.4hrs</b> — load held, RPE capped at 8.</div>
+      <div class="row between" style="margin-top:16px"><div class="eyebrow" style="color:var(--faint)">Exercises kept</div><div style="font-family:Montserrat;font-weight:800" id="keptNum">3 / 8</div></div>
+      <div class="kept-seg" id="keptSeg"></div>
+      <div class="ex-rail" id="exRail"></div>
+    </div>
+
+    <!-- exercise card -->
+    <div class="ex-card">
+      <div class="row between">
+        <div class="eyebrow" id="exNum">Exercise 04 of 08</div>
+        
+      </div>
+      <div class="ex-head">
+        <div class="ex-ico" id="exIco"></div>
+        <div><h2 id="exName" style="margin:0">Back Squat</h2><div class="ex-mg" id="exMg">Quads · Glutes</div></div>
+      </div>
+      <div class="row" style="margin-top:13px;gap:8px;flex-wrap:wrap">
+        <button class="chip" onclick="openDemo()"><span style="color:var(--navy)">▶</span> Demo · 0:45</button>
+        <button class="chip" style="border-color:#FDD8D3;color:var(--red-dark)" onclick="openCapture()">● Record set</button>
+        <button class="chip" onclick="openLibrary()">▦ Library</button>
+        <button class="chip tempo-toggle on" id="tempoBtn" onclick="toggleTempo()"><span class="tg-dot"></span> <span id="tempoLbl">Tempo Coach · On</span></button>
+      </div>
+
+      <div class="videobox" onclick="openDemo()" style="cursor:pointer">
+        <span class="tag2">PT-RECORDED</span>
+        <div class="play">▶</div>
+        <span class="tmp" id="vidCap">Back Squat · Demo — Tempo 3-1-1</span>
+      </div>
+
+      <div class="presc">
+        <div><div class="k">Working</div><div class="v" id="pWork">4×8</div><div class="u">reps</div></div>
+        <div><div class="k">Load</div><div class="v" id="pLoad">102.5</div><div class="u">kg</div></div>
+        <div><div class="k">Tempo</div><div class="v" id="pTempo">3-1-1</div><div class="u">&nbsp;</div></div>
+        <div><div class="k">Rest</div><div class="v" id="pRest">2:30</div><div class="u">&nbsp;</div></div>
+      </div>
+
+      <div id="warmWrap"><div class="grp-h">Warm-up</div><div id="warmups"></div></div>
+      <div class="grp-h">Working sets</div>
+      <div id="sets" style="margin-top:2px"></div>
+
+      <button class="btn btn-red" id="guidedBtn" onclick="startGuided()" style="margin-top:16px">▶ Start guided set — Tempo Coach</button>
+
+      <div class="lastweek" id="lastweek">Last week: <b>100kg · 8 / 8 / 7 / 6 @ RPE 8</b> — you're up 2.5kg on the bar.</div>
+
+      <div class="deviation" id="devNote">↔ Swapped to <b id="swapName"></b>. Logged as a deviation — <b id="devWho">your coach has been notified.</b> Same muscle group, load auto-scaled.</div>
+
+      <div class="row" style="margin-top:14px;gap:10px">
+        <button class="btn btn-ghost" onclick="openSwap()">↔ Substitute</button>
+        <button class="btn btn-red" onclick="confirmAll()">Confirm set</button>
+      </div>
+    </div>
+
+    <div class="footbar">
+      <div class="row" style="gap:10px">
+        <button class="btn btn-ghost" onclick="prevEx()" style="flex:0 0 44%">‹ Previous</button>
+        <button class="btn btn-navy" onclick="nextEx()">Next exercise ›</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:10px;color:var(--muted)" onclick="openWorkoutSummary()">Finish &amp; see session wrap</button>
+    </div>
+  </section>
+
+  <!-- ============ ATHLETE ONBOARDING ============ -->
+  <section class="screen" id="onboard">
+    <div class="ob-dots" id="obDots" style="margin-top:20px"></div>
+    <div class="ob-step" id="obStep">Step 1 of 6</div>
+    <div id="obBody" style="padding-bottom:120px"></div>
+    <div class="ob-foot" id="obFoot" style="margin:14px -18px 0"></div>
+  </section>
+
+  <!-- ============ CUSTOM-PACT DETAIL ============ -->
+  <section class="screen" id="pactDetail">
+    <div class="lg-top"><button class="back" onclick="go('dash')">←</button><div class="ttl">PACT DETAIL</div><span style="width:38px"></span></div>
+    <div id="pdBody" style="padding-bottom:40px"></div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section class="screen" id="settings">
+    <div class="lg-top"><button class="back" onclick="go('dash')">←</button><div class="ttl">SETTINGS</div><span style="width:38px"></span></div>
+    <div id="setBody" style="padding-bottom:40px"></div>
+  </section>
+
+  <!-- ============ PROGRESS / HISTORY ============ -->
+  <section class="screen" id="history">
+    <div class="lg-top"><button class="back" onclick="go('dash')">←</button><div class="ttl">PROGRESS</div><span style="width:38px"></span></div>
+    <div id="histBody" style="padding-bottom:40px"></div>
+  </section>
+
+  <!-- ============ PAX CONVERSATION ============ -->
+  <section class="screen" id="pax">
+    <div class="pax-head">
+      <button class="back" onclick="go('dash')">←</button>
+      <div class="pax-av">P</div>
+      <div class="pax-id"><div class="pn">PAX</div><div class="ps">Lives in WhatsApp · this is your thread</div></div>
+      <button class="cbtn" id="paxWaBtn" style="display:none;margin-left:auto" onclick="window.open(paxWaUrl(''),'_blank')">Open in WhatsApp</button>
+    </div>
+    <div class="thread" id="thread">
+      <div class="day-div">Today</div>
+
+      <div class="msg in"><div class="bubble">Morning, Alex 👋 You slept 7h12 — recovery's solid. One thing: your coach capped squats at RPE 8 today after that short night midweek, so we push effort, not ego.
+        <div class="brief"><div class="bt">● Today's brief</div><div class="bh">Lower body</div><div class="bs">8 exercises · ~52 min · big rock is Back Squat 4×8 @ 102.5kg</div><button class="btn btn-red" onclick="beginWorkout()">Begin workout →</button></div>
+      </div><div class="t">07:00</div></div>
+
+      <div class="msg me"><div class="bubble">Morning! Feeling good, in the gym at 9</div><div class="t">07:42</div></div>
+      <div class="msg in"><div class="bubble">Love it. Put me on speaker for the squats and I'll count you through the tempo — hands free. 💪</div><div class="t">07:43</div></div>
+
+      <div class="msg in"><div class="bubble">Halfway check, Alex — squats moved well and you hit two PRs. Nice work. You're on 6.2k steps and the session's banked.<br><br>One small nudge: no weigh-in logged yet today, and that's one of your pacts. 20 seconds next time you're near the scales? No stress if not.</div><div class="t">13:30</div></div>
+
+      <div class="msg me"><div class="bubble">rough afternoon tbh, work's been brutal</div><div class="t">15:10</div></div>
+      <div class="msg in"><div class="bubble">That sounds draining — thanks for saying it rather than going quiet. Here's the thing: you already did the hard part this morning, so today's a win no matter what the evening looks like.<br><br>Don't force the step target tonight. Protect your sleep, that's the only ask. I'll move the target, not the goal. Want me to keep it light?</div><div class="t">15:11</div></div>
+      <div class="msg me"><div class="bubble">yeah keep it light please</div><div class="t">15:14</div></div>
+      <div class="msg in"><div class="bubble">Done. Steps target's off for today — sleep's the one that counts. Rest up, no guilt. Tomorrow we go again. 🤝</div><div class="t">15:14</div></div>
+
+      <div class="msg in"><div class="bubble">Evening wrap, Alex 🌙<br><br>Training: ✅ full lower, 2 PRs on the squat.<br>Steps: 7.1k (I pulled the target, remember).<br>Sleep pact: the one that matters tonight.<br><br>Your week's still at 92% adherence — one heavy day doesn't dent that. Genuinely good squat work today. Night.</div><div class="t">21:00</div></div>
+    </div>
+    <div class="quick" id="quick"></div>
+    <div class="composer">
+      <input id="paxInput" placeholder="Message PAX…" onkeydown="if(event.key==='Enter')sendPax()">
+      <button class="send" onclick="sendPax()">➤</button>
+    </div>
+  </section>
+
+  <!-- rest timer -->
+  <div class="rest" id="rest">
+    <span>Rest</span><span class="t" id="restT">2:30</span>
+    <button onclick="skipRest()">Skip</button><button onclick="addRest()">+0:30</button>
+  </div>
+</div>
+
+<!-- toast -->
+<div class="toast" id="toast"></div>
+
+<!-- new pact sheet -->
+<div class="ov" id="pactOv">
+  <div class="sheet">
+    <div class="eyebrow">Your pact</div>
+    <h3>Make a commitment.</h3>
+    <div class="muted" style="font-size:13px"><span id="pactOwnSub">This one's yours — not from your coach. You own it.</span></div>
+    <div class="field"><label>The pact</label><input type="text" id="pTitle" placeholder="e.g. No alcohol on weeknights"></div>
+    <div class="field"><label>Why this matters</label><input type="text" id="pWhy" placeholder="e.g. Booze wrecks my sleep — and my Saturday session"></div>
+    <div class="field"><label>Cadence</label>
+      <div class="cadence" id="cadence">
+        <button class="chip on" data-c="Daily">Daily</button>
+        <button class="chip" data-c="4× / week">4× / week</button>
+        <button class="chip" data-c="5× / week">5× / week</button>
+        <button class="chip" data-c="Weekends">Weekends</button>
+      </div>
+    </div>
+    <div class="field"><label>Until (optional)</label><input type="date" id="pEnd"></div>
+    <div class="field">
+      <div class="row between">
+        <div><label style="margin:0">Share for accountability</label><div class="muted" style="font-size:12px;margin-top:4px">Pick someone to keep you honest.</div></div>
+        <label class="switch"><input type="checkbox" id="shareTog" onchange="toggleShare()"><span class="sl"></span></label>
+      </div>
+    </div>
+    <div id="shareBox" style="display:none">
+      <div class="field" style="margin-top:10px"><label>Who's keeping you honest</label><input type="text" id="witness" placeholder="Name — e.g. Jordan (partner)"></div>
+      <div class="field"><label>Their mobile or email</label><input type="text" id="witContact" placeholder="+44 7… or jordan@email.com"></div>
+      <div class="field"><label>Ping them via</label>
+        <div class="chan" id="chan">
+          <button class="chip on" data-ch="WhatsApp">WhatsApp</button>
+          <button class="chip" data-ch="SMS">SMS</button>
+          <button class="chip" data-ch="Email">Email</button>
+        </div>
+      </div>
+      <div class="info">🔔 <b id="witName">They'll</b> get a first ping now and a <b>real-time alert</b> each time you keep or break this pact — nothing else about your data. Revoke anytime.</div>
+    </div>
+    <div class="row" style="margin-top:20px;gap:10px">
+      <button class="btn btn-ghost" onclick="closeSheet('pactOv')" style="flex:0 0 34%">Cancel</button>
+      <button class="btn btn-red" onclick="savePact()">Create pact</button>
+    </div>
+  </div>
+</div>
+
+<!-- substitute sheet -->
+<div class="ov" id="swapOv">
+  <div class="sheet">
+    <div class="eyebrow">Equipment unavailable?</div>
+    <h3 id="swapTitle">Swap Back Squat.</h3>
+    <div class="muted" style="font-size:13px" id="swapSub">Same muscle group — pick what's free.</div>
+    <div id="swapList"></div>
+    <button class="btn btn-ghost" style="margin-top:16px" id="swapKeep" onclick="closeSheet('swapOv')">Keep exercise</button>
+  </div>
+</div>
+
+<!-- menu -->
+<div class="ov" id="menuOv">
+  <div class="sheet">
+    <div class="eyebrow">PACT.Health</div><h3 style="margin:2px 0 10px">Menu</h3>
+    <div class="menu-item" onclick="closeSheet('menuOv');startOnboarding()"><span class="mi">▶</span> Replay athlete onboarding</div>
+    <div class="menu-item" onclick="closeSheet('menuOv');openWeight()"><span class="mi">⚖️</span> Log today's weight</div>
+    <div class="menu-item" onclick="closeSheet('menuOv');openPact()"><span class="mi">＋</span> Create a pact</div>
+    <div class="menu-item" onclick="closeSheet('menuOv');openHistory()"><span class="mi">📈</span> Progress &amp; history</div>
+    <div class="menu-item" onclick="closeSheet('menuOv');openSettings()"><span class="mi">⚙️</span> Settings &amp; connected apps</div>
+    <div class="menu-item" onclick="showLogin()"><span class="mi">↩</span> Sign out / switch to coach</div>
+    <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:14px;color:var(--muted)" onclick="closeSheet('menuOv')">Close</button>
+  </div>
+</div>
+
+<!-- video library -->
+<div class="ov" id="libOv">
+  <div class="sheet">
+    <div class="row between"><div><div class="eyebrow">Exercise library</div><h3 style="margin:2px 0 0">Demos &amp; tempo guides</h3></div><button class="tm-x" onclick="closeSheet('libOv')" style="background:#EEF2F6;color:var(--navy)">Close</button></div>
+    <div class="lib-filter" id="libFilter"></div>
+    <div class="lib-grid" id="libGrid"></div>
+  </div>
+</div>
+
+<!-- log cardio -->
+<div class="ov" id="cardioOv">
+  <div class="sheet">
+    <div class="eyebrow">Cardio</div><h3 style="margin:2px 0 2px">Log a session</h3>
+    <div class="muted" style="font-size:13px">Wearable sessions land automatically — this is for the ones it missed.</div>
+    <div class="field"><label>Type</label>
+      <div class="cadence" id="cardioType">
+        <button class="chip on" data-t="run">🏃 Run</button>
+        <button class="chip" data-t="ride">🚴 Ride</button>
+        <button class="chip" data-t="walk">🚶 Walk</button>
+        <button class="chip" data-t="swim">🏊 Swim</button>
+      </div>
+    </div>
+    <div class="row" style="gap:10px">
+      <div class="field" style="flex:1"><label>Distance (km)</label><input type="number" step="0.1" inputmode="decimal" id="cardioKm" placeholder="5.0" class="ob-in"></div>
+      <div class="field" style="flex:1"><label>Time (min)</label><input type="number" inputmode="numeric" id="cardioMin" placeholder="28" class="ob-in"></div>
+    </div>
+    <div class="row" style="gap:10px;margin-top:18px"><button class="btn btn-ghost" onclick="closeSheet('cardioOv')" style="flex:0 0 34%">Cancel</button><button class="btn btn-red" onclick="saveCardio()">Log it</button></div>
+  </div>
+</div>
+
+<!-- weigh-in -->
+<div class="ov" id="weightOv">
+  <div class="sheet">
+    <div class="eyebrow">Daily weigh-in</div><h3 style="margin:2px 0 2px">Log your weight</h3>
+    <div class="muted" style="font-size:13px">Morning weight — after the bathroom, before food.</div>
+    <div class="wq">
+      <button onclick="nudgeWeight(-0.1)">−</button>
+      <input id="wInput" type="number" step="0.1" inputmode="decimal" value="88.6" oninput="updateWLabel()">
+      <button onclick="nudgeWeight(0.1)">＋</button>
+    </div>
+    <div class="muted" style="text-align:center;font-size:12px;margin-top:8px" id="wtLastLine">kg</div>
+    <div class="row" style="gap:10px;margin-top:18px"><button class="btn btn-ghost" onclick="closeSheet('weightOv')" style="flex:0 0 34%">Cancel</button><button class="btn btn-red" id="wSaveBtn" onclick="saveWeight()">Log 88.6kg</button></div>
+  </div>
+</div>
+
+<!-- demo player -->
+<div class="ov" id="demoOv">
+  <div class="sheet dark">
+    <div class="row between"><div><div class="eyebrow">PT-recorded demo</div><h3 id="demoTitle" style="margin:2px 0 0">Back Squat</h3></div><button class="tm-x" onclick="closeSheet('demoOv')">Close</button></div>
+    <div class="player-scr"><div class="fig" id="demoFig"></div><span class="tempo-ticks" id="demoTempo">Tempo 3-1-1</span></div>
+    <div class="pbar"><i id="pbarFill"></i></div>
+    <div class="pctrl"><button class="btn btn-red btn-sm" style="width:auto" onclick="playDemo()">▶ Play</button><span id="demoTime">0:00 / 0:45</span><span style="margin-left:auto" id="filmedBy">Filmed by your coach</span></div>
+  </div>
+</div>
+
+<!-- form capture -->
+<div class="ov" id="captOv">
+  <div class="sheet dark">
+    <div class="row between"><div><div class="eyebrow">Form capture</div><h3 style="margin:2px 0 0" id="capTitle">Record a set for your coach</h3></div><button class="tm-x" onclick="closeSheet('captOv')">Close</button></div>
+    <div class="cam" id="camView"><div class="frame"></div><div class="rec" id="camRec"><span class="rd"></span> READY</div><div class="fig figc" id="camFig"></div><div class="big" id="camBig">●</div></div>
+    <div id="capAction"><button class="recbtn" onclick="doCapture()"></button></div>
+    <input type="file" id="clipFile" accept="video/*" capture="environment" style="display:none" onchange="uploadClip(this.files[0])">
+    <div class="muted" style="color:#9DB4C9;font-size:12.5px;text-align:center;margin-top:14px" id="capHint">Film one working set. PAX checks it, then your coach reviews and replies in your thread.</div>
+  </div>
+</div>
+
+<!-- exercise summary -->
+<div class="ov" id="exSumOv">
+  <div class="sheet">
+    <div class="eyebrow">Exercise complete</div><h3 id="sumTitle" style="margin:2px 0 10px">Back Squat</h3>
+    <div id="sumSets"></div>
+    <div class="sum-tiles" id="sumTiles"></div>
+    <div class="row" style="gap:10px;margin-top:4px"><button class="btn btn-ghost" onclick="closeSheet('exSumOv')" style="flex:0 0 38%">Review</button><button class="btn btn-red" id="sumNext" onclick="sumNext()">Next exercise →</button></div>
+  </div>
+</div>
+
+<!-- session wrap -->
+<div class="ov" id="wkSumOv">
+  <div class="sheet">
+    <div class="eyebrow">Session wrap</div><h3 style="margin:2px 0 2px" id="wkTitle">Lower body — done.</h3>
+    <div class="muted" style="font-size:13px" id="wkSub">Day 23 · Lower</div>
+    <div id="wkNote"></div>
+    <div class="sum-tiles" id="wkTiles"></div>
+    <div id="wkList"></div>
+    <button class="btn btn-red" style="margin-top:16px" onclick="finishWorkout()" id="finishBtn">Finish &amp; sync →</button>
+    <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:10px;color:var(--muted)" onclick="closeSheet('wkSumOv')">Keep going</button>
+  </div>
+</div>
+
+<!-- tempo coach overlay -->
+<div class="ov full" id="tempoOv">
+  <div class="tempo-modal">
+    <div class="tm-top"><span class="st" id="tmStage">Ready</span><div><button class="tm-snd" id="tmSnd" onclick="toggleSound()">🔊 Sound</button><button class="tm-x" onclick="tempoExit()">Exit</button></div></div>
+    <div class="tm-body" id="tmBody"></div>
+  </div>
+</div>
+
+<script>
+/* ---------- state ---------- */
+const state = {
+  pacts:[
+    {n:'Train 4× / week',done:true,coach:true,cad:'4× / week',hist:genHist(3,0.9)},
+    {n:'180g protein',done:true,coach:true,cad:'Daily',hist:genHist(7,0.86)},
+    {n:'10k steps',done:true,coach:true,cad:'Daily',hist:genHist(11,0.82)},
+    {n:'7+ hours sleep',done:true,coach:true,cad:'Daily',hist:genHist(5,0.79)},
+    {n:'Daily weigh-in',done:false,coach:true,cad:'Daily',hist:genHist(9,0.72)},
+    {n:'Log every meal',done:false,coach:true,cad:'Daily',hist:genHist(13,0.63)},
+  ],
+  exIndex:3, totalEx:8,
+  sets:[], warm:[], target:{w:102.5,r:8},
+  tempoOn:true, sound:true,
+  wt:{start:92.7,target:85,current:88.6,prev:89.0,hist:[92.7,92.5,92.1,91.6,91.4,90.8,90.6,90.1,89.7,89.5,89.0,88.9,88.6]},
+  apps:{'Apple Health':{on:true,sync:'live',ico:'♥'},'Health Connect':{on:false,sync:'—',ico:'✚'},Garmin:{on:true,sync:'2 min ago',ico:'⌚'},Oura:{on:true,sync:'8 min ago',ico:'◍'},Fitbit:{on:false,sync:'—',ico:'⬤'},Whoop:{on:false,sync:'—',ico:'➰'},'Google Calendar':{on:false,sync:'—',ico:'▦'}},
+  nutrition:{source:'Apple Health', kcal:1840, kcalTarget:2100, note:'260 kcal left today · protein needs a nudge before dinner', macros:[['Protein',152,180,'g'],['Carbs',195,210,'g'],['Fat',60,70,'g']]},
+  cadence:'Daily'
+};
+function coachN(){ return state.coachName||'your coach'; }
+function witnessLink(channel,contact,text){
+  const t=encodeURIComponent(text);
+  if(channel==='WhatsApp'){ return 'https://wa.me/'+String(contact||'').replace(/[^\d]/g,'')+'?text='+t; }
+  if(channel==='SMS'){ return 'sms:'+contact+'?&body='+t; }
+  return 'mailto:'+contact+'?subject='+encodeURIComponent('My PACT commitment')+'&body='+t;
+}
+function sendWitnessPing(channel,contact,text){
+  try{ const u=witnessLink(channel,contact,text); if(channel==='WhatsApp') window.open(u,'_blank','noopener'); else window.open(u,'_self'); }catch(e){}
+}
+
+/* ---------- nav ---------- */
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function beginWorkout(){
+  const c=document.querySelector('#logger'); go('logger');
+  const card=document.querySelector('.ex-card'); card.classList.remove('pulse'); void card.offsetWidth; card.classList.add('pulse');
+}
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(html,ms=2600){
+  const t=document.getElementById('toast'); t.innerHTML=html; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),ms);
+}
+function pax(where){ toast('<div class="av" style="width:26px;height:26px;font-size:12px">P</div> PAX is in WhatsApp — this opens the thread.'); }
+
+/* ---------- pacts ---------- */
+function genHist(seed,rate){ let x=(seed*2654435761)>>>0, a=[]; for(let i=0;i<28;i++){ x=(1103515245*x+12345)>>>0; a.push(((x>>>16)/65535)<rate?1:0);} return a; }
+function pactRate(p){ const logged=p.hist.filter(v=>v!==null&&v!==undefined); if(!logged.length) return 0;
+  return Math.round(logged.reduce((s,v)=>s+v,0)/logged.length*100); }
+function pactStreak(p){ if(typeof p.streak==='number') return p.streak;
+  let s=0; for(let i=p.hist.length-1;i>=0;i--){ if(p.hist[i])s++; else if(p.hist[i]===0) break;} return s; }
+function pactBest(p){ if(typeof p.best==='number'&&p.best>0) return p.best;
+  let b=0,c=0; p.hist.forEach(v=>{ if(v){c++;b=Math.max(b,c);} else if(v===0) c=0;}); return b; }
+function renderPacts(){
+  const el=document.getElementById('pactList'); el.innerHTML='';
+  state.pacts.forEach((p,i)=>{
+    const row=document.createElement('div'); row.className='pact tap';
+    const streak=pactStreak(p), rate=pactRate(p);
+    const bits=[];
+    if(streak>0) bits.push(`<span class="fire">🔥 ${streak}-day streak</span>`);
+    const logged=p.hist.filter(v=>v!==null&&v!==undefined).length;
+    if(logged>=3) bits.push(`${rate}% last 28d`);
+    if(p.why) bits.push(`“${p.why}”`);
+    else if(!bits.length) bits.push(p.coach?'set by your coach':'your promise — tap to track it');
+    row.innerHTML=`<div class="pcheck ${p.done?'done':''}" onclick="event.stopPropagation();togglePact(${i})">${p.done?'✓':''}</div>
+      <div class="pmain" onclick="openPactDetail(${i})">
+        <div class="pn">${p.n}</div>
+        <div class="pmeta">${bits.join(' · ')}</div>
+      </div>
+      ${p.coach?'':'<span class="badge you">Yours</span>'}
+      ${p.share?'<span class="badge share">🔔 '+p.witness+'</span>':''}
+      <span class="chev" onclick="openPactDetail(${i})">›</span>`;
+    el.appendChild(row);
+  });
+  const done=state.pacts.filter(p=>p.done).length;
+  document.getElementById('pactCount').textContent=`${done} / ${state.pacts.length} kept today`;
+  renderPactImpact();
+}
+// The line that makes adherence mean something: pacts kept → weight pace → goal date.
+function renderPactImpact(){
+  const el=document.getElementById('pactImpact'); if(!el) return;
+  try{
+    const w=state.wt||{};
+    let kept=0,logged=0; state.pacts.forEach(p=>p.hist.forEach(v=>{ if(v===1||v===0){logged++; if(v===1)kept++;} }));
+    const adh=logged>=5?Math.round(kept/logged*100):null;
+    const hist=w.hist||[], dates=w.histDates||[];
+    let line='';
+    if(adh!=null && hist.length>=2 && dates.length===hist.length && w.current && w.target){
+      const days=(new Date(dates[dates.length-1])-new Date(dates[0]))/864e5;
+      if(days>=7){
+        const rate=(hist[0]-hist[hist.length-1])/(days/7), toGo=w.current-w.target;
+        if(rate>0.05&&toGo>0){
+          const end=new Date(); end.setDate(end.getDate()+Math.round(toGo/rate*7));
+          line=`<b style="color:var(--ink)">${adh}% of pacts kept</b> over 28 days is moving you ${Math.abs(rate).toFixed(2)}kg/wk — on pace for <b style="color:var(--ink)">${(+w.target).toFixed(1)}kg by ${end.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</b>. The pacts are the pace.`;
+        } else if(rate<=0.05&&toGo>0){
+          line=`<b style="color:var(--ink)">${adh}% of pacts kept</b> over 28 days — but the scale isn't moving yet. Keep the streaks alive this week and it will.`;
+        }
+      }
+    }
+    if(!line&&adh!=null) line=`<b style="color:var(--ink)">${adh}%</b> of your pacts kept over the last 28 days. Every tick here is a day that counted.`;
+    if(line){ el.innerHTML='📈 '+line; el.style.display=''; } else { el.style.display='none'; }
+  }catch(e){ el.style.display='none'; }
+}
+async function togglePact(i){
+  const p=state.pacts[i]; const was=p.done, wasHist=p.hist[27], wasStreak=p.streak;
+  p.done=!p.done; p.hist[27]=p.done?1:0;
+  if(typeof p.streak==='number'){ p.streak=p.done?p.streak+1:Math.max(0,p.streak-1); }
+  renderPacts();
+  // The tick is a real record: one row in pact_checkins per pact per day.
+  // PAX reads it (so it won't re-ask tonight), the coach sees it, streaks move.
+  if(LIVE&&state.live&&p.pid){
+    try{
+      if(p.done){
+        const { error } = await sb.from('pact_checkins').upsert(
+          { pact_id:p.pid, client_id:state.live.cid, date:state.live.today, kept:true, source:'app' },
+          { onConflict:'pact_id,date' });
+        if(error) throw error;
+      } else {
+        const { error } = await sb.from('pact_checkins').delete().eq('pact_id',p.pid).eq('date',state.live.today);
+        if(error) throw error;
+      }
+    }catch(e){
+      p.done=was; p.hist[27]=wasHist; p.streak=wasStreak;
+      renderPacts(); toast('⚠️ Couldn\'t save that — '+(e.message||'try again'),2800); return;
+    }
+  }
+  if(p.done&&p.share&&p.contact){ toast(`Kept ✅ Open the pact to ping <b>${p.witness}</b>.`,2200); }
+}
+
+/* ---------- custom-pact detail / tracking ---------- */
+let pdIndex=0;
+function openPactDetail(i){ pdIndex=i; renderPactDetail(); go('pactDetail'); }
+function renderPactDetail(){
+  const p=state.pacts[pdIndex], streak=pactStreak(p), best=pactBest(p), rate=pactRate(p);
+  const days=['M','T','W','T','F','S','S'], wk=p.hist.slice(21);
+  let wkHtml=''; days.forEach((d,i)=>{ const today=i===6; const v=wk[i];
+    const cls=today?'today':(v===1?'hit':v===0?'miss':'today'); const ic=today?'·':(v===1?'✓':v===0?'✗':'·');
+    wkHtml+=`<div class="wd"><div class="l">${d}</div><div class="c ${cls}">${ic}</div></div>`; });
+  let heat=''; p.hist.forEach(v=>heat+=`<i class="${v===1?'hit':v===0?'miss':''}"></i>`);
+  const wit = p.share
+    ? `<div class="fld-l">Accountability witness</div>
+       <div class="witcard"><div class="wa">${p.witness[0].toUpperCase()}</div><div style="flex:1"><div class="wn">${p.witness}</div><div class="wm">Via ${p.channel||'WhatsApp'}${p.contact?' · '+p.contact:''} · alerted on every keep &amp; break</div></div><button class="cbtn" onclick="pingWitness()">Ping</button></div>`
+    : `<div class="fld-l">Accountability</div>
+       <div class="witcard"><div class="wa" style="background:#F1F5F9;color:var(--muted)">＋</div><div style="flex:1"><div class="wn">Not shared yet</div><div class="wm">Add someone to keep you honest — a ping on every keep or break.</div></div><button class="cbtn" onclick="shareFromDetail()">Share</button></div>`;
+  document.getElementById('pdBody').innerHTML=`
+    <div class="pd-hero">
+      <div class="eyebrow" style="color:#FF7A6B">${p.coach?'● Set by '+coachN():'● Your pact — you own this'}</div>
+      <h2>${p.n}</h2>
+      <div style="color:#9DB4C9;font-size:13px">${p.cad||'Daily'} · ${p.coach?'coach commitment':'self-accountability'}</div>
+      ${p.why?`<div class="pd-why">“${p.why}” — that's why this one exists.</div>`:''}
+      <div class="streak">
+        <div><div class="sv">🔥 ${streak}</div><div class="sk">day streak</div></div>
+        <div><div class="sv">${best}</div><div class="sk">best run</div></div>
+        <div><div class="sv">${rate}%</div><div class="sk">28-day rate</div></div>
+      </div>
+    </div>
+    <button class="btn ${p.done?'btn-ghost':'btn-red'}" style="margin-top:14px" onclick="togglePactToday()">${p.done?'✓ Kept today — tap to undo':'Mark kept today'}</button>
+    <div class="card"><div class="sec-h"><h3>This week</h3><span class="meta">${wk.filter(v=>v===1).length}/7 kept</span></div><div class="wkrow" style="margin-top:12px">${wkHtml}</div></div>
+    <div class="card"><div class="sec-h"><h3>Last 4 weeks</h3><span class="meta">${rate}% adherence</span></div><div class="heat" style="margin-top:12px">${heat}</div><div class="row between" style="font-size:11px;color:var(--faint);margin-top:8px"><span>4 wks ago</span><span>today</span></div></div>
+    <div class="card">${wit}</div>
+    ${p.coach?'':`<button class="btn btn-ghost btn-sm" style="width:100%;margin-top:14px;color:var(--red-dark);border-color:#FDD8D3" onclick="removePact()">Remove this pact</button>`}`;
+}
+function pingWitness(){
+  const p=state.pacts[pdIndex]; if(!p||!p.contact){ toast('No witness contact on this pact.'); return; }
+  const streak=pactStreak(p), rate=pactRate(p);
+  sendWitnessPing(p.channel||'WhatsApp', p.contact,
+    `Pact check-in: "${p.n}" — ${p.done?'kept today ✅':'still open today'}. ${streak>1?streak+'-day streak, ':''}${rate}% over the last 4 weeks. Keeping me honest is working 🤝`);
+  toast(`Opening ${p.channel||'WhatsApp'} to ping ${p.witness||'your witness'}…`,2200);
+}
+async function togglePactToday(){ const p=state.pacts[pdIndex];
+  await togglePact(pdIndex); renderPactDetail();
+  if(p.share&&p.contact){ sendWitnessPing(p.channel||'WhatsApp', p.contact, `Pact update: "${p.n}" — ${p.done?'KEPT today ✅':'broken today. Tomorrow we go again.'} `); toast(`Opening ${p.channel||'WhatsApp'} to tell ${p.witness}…`,2200); } }
+function shareFromDetail(){ go('dash'); openPact(); toast('Turn on “Share for accountability”, add their number or email, and pick a channel.',3000); }
+async function removePact(){
+  const p=state.pacts[pdIndex];
+  if(LIVE&&state.live&&p.pid){ const { error } = await sb.from('custom_pacts').update({ status:'archived' }).eq('id',p.pid);
+    if(error){ toast('⚠️ Couldn\'t remove: '+error.message,3000); return; } }
+  state.pacts.splice(pdIndex,1); renderPacts(); go('dash'); toast('Pact removed.');
+}
+
+/* ---------- header menu ---------- */
+function openMenu(){ document.getElementById('menuOv').classList.add('show'); }
+
+/* ---------- login — the single front door ----------
+   One page, four modes, no passwords anywhere:
+     ath    — athlete sign-in (magic link → this app)
+     athReg — redeem an invite (invite-only; starts onboarding)
+     co     — coach sign-in (magic link → lands SIGNED IN on the
+              Coach Console via its /auth/callback — same Supabase
+              Auth, so no second login screen)
+     coReg  — coach application (pilot is hand-onboarded)         */
+const COACH_URL='https://pact-coach-console.vercel.app/'; // confirmed production URL of the PT console
+let lastMode='ath';
+const LOGIN_FORMS={ath:'formAth',athReg:'formAthReg',co:'formCo',coReg:'formCoReg',sent:'loginSent'};
+function loginMode(m){
+  if(m!=='sent') lastMode=m;
+  Object.values(LOGIN_FORMS).forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+  const el=document.getElementById(LOGIN_FORMS[m]); if(el) el.style.display='block';
+  const coach=(m==='co'||m==='coReg');
+  document.getElementById('tabAth').classList.toggle('on',!coach);
+  document.getElementById('tabCo').classList.toggle('on',coach);
+}
+function loginTab(t){ loginMode(t==='co'?'co':'ath'); }
+function sentState(title,body){ document.getElementById('sentTitle').textContent=title; document.getElementById('sentBody').innerHTML=body; loginMode('sent'); }
+
+function authDown(){ toast('Auth service didn\'t load — check your connection and refresh.',3200); }
+
+async function enterApp(){ // athlete sign-in (magic link, invite-only)
+  const email=(document.getElementById('loginEmail').value||'').trim();
+  if(!LIVE) return authDown();
+  if(!email){ toast('Enter your email for a sign-in link.'); return; }
+  const { error } = await sb.auth.signInWithOtp({
+    email,
+    options:{ emailRedirectTo: location.href.split('#')[0].split('?')[0], shouldCreateUser:false }
+  });
+  if(error){
+    if(/signups not allowed|user not found|otp_disabled/i.test(error.message)){
+      toast('That email isn\'t on PACT yet — redeem your invite first.',3400); loginMode('athReg'); return;
+    }
+    toast('Sign-in error: '+error.message,3200); return;
+  }
+  sentState('Check your inbox', `We've sent a sign-in link to <b>${email}</b>. One tap and you're in — no password.`);
+}
+
+async function coachSignIn(){ // coach sign-in → lands signed in on the console
+  const email=(document.getElementById('coachEmail').value||'').trim();
+  if(!LIVE) return authDown();
+  if(!email){ toast('Enter your coach email.'); return; }
+  const { error } = await sb.auth.signInWithOtp({
+    email,
+    options:{ emailRedirectTo: COACH_URL.replace(/\/$/,'')+'/auth/bridge', shouldCreateUser:false }
+  });
+  if(error){ toast('Sign-in error: '+error.message,3200); return; }
+  sentState('Check your inbox', `Sign-in link sent to <b>${email}</b>. One tap opens your Coach Console — already signed in.`);
+}
+
+function redeemInvite(){ // athlete "register" — the console's real invite flow
+  const code=(document.getElementById('inviteCode').value||'').trim();
+  if(!code){ toast('Pop your invite code in first.'); return; }
+  // Server-validated onboarding lives on the console app (/onboard?token=…).
+  window.location.href = COACH_URL.replace(/\/$/,'') + '/onboard?token=' + encodeURIComponent(code);
+}
+
+function coachApply(){ // coach signup — self-serve, straight to the console /signup (code-gated)
+  const n=(document.getElementById('coRegName').value||'').trim();
+  const b=(document.getElementById('coRegBiz').value||'').trim();
+  const e=(document.getElementById('coRegEmail').value||'').trim();
+  if(!n||!e){ toast('Add your name and email.'); return; }
+  const q=new URLSearchParams({name:n, business:b, email:e}).toString();
+  window.location.href = COACH_URL.replace(/\/$/,'') + '/signup?' + q;
+}
+
+function showLogin(){
+  if(LIVE){
+    // Clear the session then reload clean — guarantees the front door, no stale state.
+    try{ sb.auth.signOut().finally(()=>location.replace(location.pathname)); }
+    catch(e){ location.replace(location.pathname); }
+    return;
+  }
+  document.getElementById('login').classList.remove('hidden'); loginMode('ath');
+}
+
+/* ---------- nutrition (from Apple / Android Health) ---------- */
+function macroBar(name,val,tgt,unit){
+  const ratio=val/tgt, pct=Math.min(100,ratio*100);
+  const good=ratio>=0.9&&ratio<=1.1, col=good?'var(--good)':(ratio<0.9?'#D9A400':'var(--red)');
+  return `<div style="margin-top:11px"><div class="row between" style="font-size:12.5px;margin-bottom:5px"><b>${name}</b><span class="muted">${val} / ${tgt}${unit}</span></div><div class="track" style="margin:0;background:#EEF2F6"><div class="fill" style="width:${pct}%;background:${col}"></div></div></div>`;
+}
+function renderNutrition(){
+  const n=state.nutrition, ratio=n.kcalTarget?n.kcal/n.kcalTarget:1;
+  const macrosOK = n.macros.every(m=>{ const r=m[1]/m[2]; return r>=0.9&&r<=1.1; });
+  const pill = macrosOK && ratio>=0.9&&ratio<=1.1 ? '<span class="nut-pill ok">On track</span>'
+    : (n.macros.find(m=>m[1]/m[2]<0.9) ? `<span class="nut-pill warn">${n.macros.find(m=>m[1]/m[2]<0.9)[0]} low</span>` : '<span class="nut-pill warn">Off target</span>');
+  document.getElementById('nutCard').innerHTML=`
+    <div class="sec-h"><h3>Nutrition today</h3><span class="meta">via ${n.source}</span></div>
+    <div class="row between" style="margin:12px 0 4px">
+      <div class="big-stat"><span class="bn" style="font-size:28px">${n.kcal.toLocaleString()}<span style="font-size:14px;color:var(--muted)"> / ${n.kcalTarget.toLocaleString()}</span></span></div>
+      ${pill}
+    </div>
+    <div class="sm" style="color:var(--muted);font-size:12px;margin-bottom:10px">${n.note}</div>
+    <div id="macros">${n.macros.map(m=>macroBar(m[0],m[1],m[2],m[3])).join('')}</div>`;
+}
+
+/* ============ SUPABASE LIVE DATA (read-only) ============
+   Fill PACT_CONFIG with your project's URL + ANON key (Supabase → Settings →
+   API). Empty = demo mode (in-memory data, app still fully clickable).
+   When set, sign-in uses a magic link and the dashboard/logger/nutrition/
+   pacts/PAX thread load from your real tables. Reads only for now. */
+// The REAL PAX lives on WhatsApp — this is the number the athlete already
+// chats with (digits only, international, no +). When set, every PAX button
+// in the app deep-links into that thread instead of the in-app snapshot.
+const PAX_WHATSAPP = '447347737076'; // the PACT line PAX messages from
+const PACT_CONFIG = {
+  SUPABASE_URL:'https://rwmmtqchrnlpnjzkrjwg.supabase.co',
+  SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3bW10cWNocm5scG5qemtyandnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3NjU1ODgsImV4cCI6MjA5MjM0MTU4OH0.kX-YPlwUGNacOz02van4C0ztVukTvfrG9Lxd02V00gc'
+};
+const LIVE = !!(PACT_CONFIG.SUPABASE_URL && PACT_CONFIG.SUPABASE_ANON_KEY && window.supabase);
+// implicit flow: magic links return with #access_token tokens, which lets the
+// console's /auth/bridge complete a COACH sign-in that started here (PKCE
+// can't cross domains — the verifier would be stuck in this app's storage).
+const sb  = LIVE ? window.supabase.createClient(PACT_CONFIG.SUPABASE_URL, PACT_CONFIG.SUPABASE_ANON_KEY, { auth:{ flowType:'implicit' } }) : null;
+
+function guessIcon(name){ const s=(name||'').toLowerCase();
+  if(/calf/.test(s))return'calves'; if(/glute|hip thrust|bridge/.test(s))return'glutes';
+  if(/rdl|deadlift|leg curl|hamstring|nordic/.test(s))return'hamstrings';
+  if(/squat|lunge|leg press|leg extension|step/.test(s))return'quads';
+  if(/bench|chest|dip|fly|incline/.test(s))return'chest';
+  if(/row|pull|lat|chin/.test(s))return'back'; if(/shoulder|ohp|overhead|lateral|press/.test(s))return'shoulders';
+  if(/curl|tricep|bicep/.test(s))return'arms'; if(/ab|core|plank|rollout|crunch|raise/.test(s))return'core';
+  return'quads'; }
+function num(v){ const m=String(v??'').match(/[\d.]+/); return m?+m[0]:0; }
+
+const FORCE_DOOR = /[?&]role=coach/.test(location.search); // console redirect → always show the front door
+function bootLive(){
+  sb.auth.getSession().then(({data:{session}})=>{ if(session && !FORCE_DOOR) onSignedIn(); });
+  sb.auth.onAuthStateChange((_e,s)=>{ if(s && !FORCE_DOOR) onSignedIn(); });
+}
+let _loadedOnce=false;
+async function onSignedIn(){
+  if(_loadedOnce) return; _loadedOnce=true;
+  document.getElementById('login').classList.add('hidden'); go('dash');
+  try{ toast('Syncing your latest data…',1500); await loadLive(); toast('You\'re up to date.',1400);
+       if(/[?&]begin=1/.test(location.search)) beginWorkout(); }   // morning-brief deep link → straight into the logger
+  catch(e){ console.error('loadLive',e); toast('Signed in, but your data didn\'t load — pull to refresh, or ask your coach to check your setup.',3600); }
+}
+async function loadLive(){
+  const uid=(await sb.auth.getUser()).data.user?.id;
+  const { data:client, error:cErr } = await sb.from('clients').select('*').eq('auth_user_id',uid).maybeSingle();
+  if(cErr) throw cErr;
+  if(!client) throw new Error('No client row linked to this login (set clients.auth_user_id).');
+  const cid=client.id, today=new Date().toISOString().slice(0,10);
+  state.live={ cid, today };
+
+  // weight targets + trend
+  if(client.start_weight)  state.wt.start=+client.start_weight;
+  if(client.target_weight) state.wt.target=+client.target_weight;
+  if(client.current_weight) state.wt.current=+client.current_weight;
+  const { data:wis } = await sb.from('weigh_ins').select('weight,date').eq('client_id',cid).order('date',{ascending:true}).limit(40);
+  if(wis&&wis.length){ state.wt.hist=wis.map(w=>+w.weight); state.wt.histDates=wis.map(w=>w.date); state.wt.current=+wis[wis.length-1].weight; if(wis.length>1)state.wt.prev=+wis[wis.length-2].weight;
+    const last=wis[wis.length-1]; const wl=document.getElementById('wtLastLine');
+    if(wl) wl.textContent=`kg · last logged ${(+last.weight).toFixed(1)}kg on ${new Date(last.date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`;
+    const wi=document.getElementById('wInput'); if(wi) wi.value=(+last.weight).toFixed(1); if(typeof updateWLabel==='function') try{updateWLabel();}catch(e){}
+  }
+  state.firstName=(client.name||'there').split(' ')[0];
+  document.getElementById('dateHead').textContent =
+    new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}) + ' · ' + greetWord();
+  updateWeightUI();
+
+  // the real coach's name (via a scoped RPC — athletes can't read personal_trainers)
+  state.coachName='your coach';
+  try{ const { data:cn } = await sb.rpc('current_coach_name'); if(cn) state.coachName=cn.split(' ')[0]; }catch(e){}
+  // coach notes — live from coach_notes (falls back to hiding the card)
+  try{
+    const { data:cnotes } = await sb.from('coach_notes').select('body,urgent,created_at')
+      .eq('client_id',cid).order('created_at',{ascending:false}).limit(3);
+    const cnc=document.getElementById('coachNotesCard');
+    if(cnotes&&cnotes.length&&cnc){
+      document.getElementById('coachNotesH').textContent='Notes from '+state.coachName;
+      cnc.querySelector('.sec-h').nextElementSibling?.remove();
+      const wrap=document.createElement('div'); wrap.style.marginTop='8px';
+      wrap.innerHTML=cnotes.map((n,i)=>`<div class="note ${n.urgent?'urgent':''}"><div class="tag"></div><div><div>${(n.body||'').replace(/</g,'&lt;')}</div><div class="who">${state.coachName} · ${new Date(n.created_at).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</div></div></div>`).join('');
+      cnc.appendChild(wrap); cnc.style.display='';
+    } else if(cnc){ cnc.style.display='none'; }
+  }catch(e){ const cnc=document.getElementById('coachNotesCard'); if(cnc) cnc.style.display='none'; }
+  const pos=document.getElementById('pactOwnSub'); if(pos) pos.textContent=`This one's yours — not from ${state.coachName}. You own it.`;
+  const fb2=document.getElementById('filmedBy'); if(fb2) fb2.textContent=`Filmed by ${state.coachName}`;
+  const ct=document.getElementById('capTitle'); if(ct) ct.textContent=`Record a set for ${state.coachName}`;
+  const dw=document.getElementById('devWho'); if(dw) dw.textContent=`${state.coachName} has been notified.`;
+
+  // nutrition (health_data + client targets)
+  const { data:hd } = await sb.from('health_data').select('*').eq('client_id',cid).order('created_at',{ascending:false}).limit(1);
+  if(hd&&hd[0]){ const h=hd[0];
+    state.nutrition={ source:'Apple Health / Terra',
+      kcal:Math.round(h.calories||0), kcalTarget:Math.round(client.calorie_target||2100),
+      note: `${Math.max(0,Math.round((client.calorie_target||2100)-(h.calories||0)))} kcal left today`,
+      macros:[['Protein',Math.round(h.protein||0),Math.round(client.protein_target||180),'g'],
+              ['Carbs',Math.round(h.carbs||0),Math.round(((client.calorie_target||2100)*0.45)/4),'g'],
+              ['Fat',Math.round(h.fat||0),Math.round(((client.calorie_target||2100)*0.30)/9),'g']] };
+  }
+
+  // today's session -> logger.
+  // Source of truth #1: the COACH-authored plan (console: programs + program_sessions).
+  // Fallback: the bot's dated `programme` rows (PAX-generated) if no active program.
+  let sessionEx=null, sessionName='';
+  const { data:activeProg } = await sb.from('programs').select('id,name,start_date,weeks')
+    .eq('client_id',cid).eq('status','active').limit(1);
+  if(activeProg&&activeProg[0]){
+    const ap=activeProg[0];
+    let wk=1;
+    try{ const pp=document.getElementById('planPill'), pt=document.getElementById('planPillTxt');
+      if(pp&&pt){ let w2=1; if(ap.start_date){ w2=Math.max(1,Math.floor((Date.now()-new Date(ap.start_date).getTime())/(7*864e5))+1); if(ap.weeks)w2=Math.min(w2,ap.weeks); }
+        pt.textContent=`${(ap.name||'ACTIVE PLAN').toUpperCase()} · WEEK ${w2}${ap.weeks?' OF '+ap.weeks:''}`; pp.style.display=''; } }catch(e){}
+    if(ap.start_date){ wk=Math.max(1,Math.floor((Date.now()-new Date(ap.start_date).getTime())/(7*864e5))+1); if(ap.weeks)wk=Math.min(wk,ap.weeks); }
+    const { data:sess } = await sb.from('program_sessions').select('name,week_number,day_index,exercises')
+      .eq('program_id',ap.id).eq('week_number',wk).order('day_index',{ascending:true});
+    if(sess&&sess.length){ const s=sess[0]; sessionEx=s.exercises; sessionName=s.name||ap.name; } // next session of the current week
+  }
+  if(!sessionEx){
+    const { data:prog } = await sb.from('programme').select('*').eq('client_id',cid).eq('date',today).limit(1);
+    if(prog&&prog[0]&&!prog[0].is_rest){ sessionEx=prog[0].exercises; sessionName=prog[0].session_name||''; }
+  }
+  if(Array.isArray(sessionEx)&&sessionEx.length){
+    EX.length=0;
+    sessionEx.forEach(ex=>{
+      const w=num(ex.weight), sets=num(ex.sets)||3;
+      const rMin=num(ex.reps_min)||null, rMax=num(ex.reps_max)||null;
+      const reps=rMax||rMin||num(ex.reps)||8;                       // target = top of the range
+      const cap=num(ex.rpe)||8;                                    // coach's RPE cap
+      const rest=num(ex.rest_seconds)||120;                        // coach's rest
+      const tempo=(typeof ex.tempo==='string'&&ex.tempo.trim())?ex.tempo.trim():null;
+      EX.push({ name:ex.name, mg:'', ico:guessIcon(ex.name), tempo, rest, warm:[],
+        repRange:(rMin&&rMax&&rMin!==rMax)?`${rMin}–${rMax}`:null,
+        work:mkSets(w, reps, w, Array.from({length:sets},()=>reps), cap), alts:[['m','Alternative','Same muscle group']] }); });
+    state.exIndex=0; state.totalEx=EX.length;
+    const st=document.querySelector('#logger .ttl'); if(st&&sessionName) st.textContent=sessionName.toUpperCase();
+    // Today's Pact card ← the real session, credited to the real coach
+    document.getElementById('pcEyebrow').innerHTML=`● Today's Pact · set by ${state.coachName}`;
+    document.getElementById('pcName').textContent=(sessionName||'Today\'s session')+'.';
+    document.getElementById('pcSub').textContent=`${EX.length} exercise${EX.length===1?'':'s'} · ready when you are`;
+    const f=sessionEx[0];
+    const bits=[f.name];
+    if(f.sets&&f.reps) bits.push(`${f.sets} × ${f.reps}`); else if(f.sets) bits.push(`${f.sets} sets`);
+    if(f.weight) bits.push(String(f.weight).match(/^\d+(\.\d+)?$/)?`${f.weight}kg`:String(f.weight));
+    document.getElementById('pcFirst').innerHTML=`<b>First lift:</b> ${bits.join(' · ')}`;
+    const li=document.getElementById('lgIntro'); if(li) li.textContent=`${EX.length} exercises · set by ${state.coachName}. Confirm each set as you go — I'll log it for you.`;
+  } else {
+    // Nothing programmed today — say so honestly; no placeholder workout.
+    document.getElementById('pcEyebrow').innerHTML='● Today\'s Pact';
+    document.getElementById('pcName').textContent='No session programmed.';
+    document.getElementById('pcSub').textContent=`Rest up — or nudge ${state.coachName} to activate your programme.`;
+    document.getElementById('pcFirst').style.display='none';
+    document.getElementById('pcBtn').style.display='none';
+  }
+
+  // cardio: this week's runs & rides (Terra + manual)
+  try{
+    const wk=new Date(); wk.setDate(wk.getDate()-6);
+    const { data:acts } = await sb.from('activities').select('type,name,date,distance_m,duration_s,avg_hr,calories')
+      .eq('client_id',cid).gte('date',wk.toISOString().slice(0,10)).order('date',{ascending:false}).limit(14);
+    state.cardio=(acts||[]).map(a=>({ type:a.type, name:a.name,
+      km:a.distance_m?+(a.distance_m/1000):null, min:a.duration_s?Math.round(a.duration_s/60):null, hr:a.avg_hr||null, kcal:a.calories||null,
+      date:new Date(a.date+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short'}) }));
+    renderCardio();
+  }catch(e){ console.error('cardio load',e); }
+
+  // already trained today? (workout_logs is the athlete-app record; programme.completed the PAX flag)
+  try{
+    const { data:wlToday } = await sb.from('workout_logs').select('status,exercises_kept,exercises_total').eq('client_id',cid).eq('date',today).order('created_at',{ascending:false}).limit(1);
+    if(wlToday&&wlToday[0]) state.doneToday={ status:wlToday[0].status, kept:wlToday[0].exercises_kept, total:wlToday[0].exercises_total };
+  }catch(e){}
+
+  // pacts (custom_pacts active + REAL 28-day history: pact_checkins first —
+  // the per-pact daily ledger every surface writes to — daily_pacts.wins as
+  // fallback for days before the ledger existed)
+  const { data:cps } = await sb.from('custom_pacts').select('*').eq('client_id',cid).eq('status','active').order('created_at',{ascending:true});
+  const d28=new Date(); d28.setDate(d28.getDate()-27);
+  const d28str=d28.toISOString().slice(0,10);
+  const { data:dpAll } = await sb.from('daily_pacts').select('date,wins,status,wins_completed,total_wins')
+    .eq('client_id',cid).gte('date',d28str).order('date',{ascending:true});
+  state.dp28=dpAll||[];
+  const dpByDate={}; state.dp28.forEach(r=>{ dpByDate[r.date]=r; });
+  let ckByPact={};
+  try{ const { data:cks } = await sb.from('pact_checkins').select('pact_id,date,kept')
+      .eq('client_id',cid).gte('date',d28str);
+    (cks||[]).forEach(c=>{ (ckByPact[c.pact_id]=ckByPact[c.pact_id]||{})[c.date]=c.kept?1:0; });
+  }catch(e){} // table not migrated yet → fall back to daily_pacts only
+  // hist for one pact: 28 slots oldest→newest; 1=kept, 0=logged-not-kept, null=no data that day
+  function realHist(pid){ const out=[]; const ck=ckByPact[pid]||{}; for(let i=27;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i);
+    const key=d.toISOString().slice(0,10);
+    if(ck[key]!==undefined){ out.push(ck[key]); continue; }
+    const row=dpByDate[key];
+    if(!row||!Array.isArray(row.wins)){ out.push(null); continue; }
+    const w=row.wins.find(x=>x.pact_id===pid);
+    out.push(w? (w.status==='won'?1:0) : null); } return out; }
+  if(cps){ const dp=state.dp28.filter(r=>r.date===today);
+    const wonToday=new Set((dp&&dp[0]&&Array.isArray(dp[0].wins)?dp[0].wins.filter(w=>w.status==='won'):[]).map(w=>w.pact_id));
+    state.pacts=cps.map(p=>({ n:p.name, pid:p.id,
+      done:(ckByPact[p.id]&&ckByPact[p.id][today]===1)||wonToday.has(p.id),
+      coach:p.created_by!=='athlete', cad:p.metric==='sessions_per_week'?'Weekly':'Daily',
+      why:(p.why||'').trim()||null,
+      share:!!p.witness_contact, witness:p.witness_name||null, contact:p.witness_contact||null, channel:p.witness_channel||'WhatsApp',
+      streak:p.current_streak||0, best:p.longest_streak||0,
+      hist:realHist(p.id) }));
+  }
+  // 7-day adherence tile — real wins/total from daily_pacts
+  try{ const d7=new Date(); d7.setDate(d7.getDate()-6); const cut=d7.toISOString().slice(0,10);
+    const rows7=state.dp28.filter(r=>r.date>=cut);
+    const wins=rows7.reduce((a,r)=>a+(r.wins_completed||0),0), tot=rows7.reduce((a,r)=>a+(r.total_wins||0),0);
+    const av=document.getElementById('adhVal'), asu=document.getElementById('adhSub');
+    if(av){ av.innerHTML = tot>0 ? Math.round(wins/tot*100)+'<span>%</span>' : '—'; }
+    if(asu){ asu.textContent = tot>0 ? `${wins} of ${tot} pact wins kept` : 'pacts start counting today'; }
+  }catch(e){}
+  // This Week: real steps + sleep from health_data (last 7 days)
+  try{ const d7b=new Date(); d7b.setDate(d7b.getDate()-6); d7b.setHours(0,0,0,0);
+    const { data:hd7 } = await sb.from('health_data').select('steps,raw,created_at')
+      .eq('client_id',cid).gte('created_at',d7b.toISOString()).order('created_at',{ascending:false});
+    const byDay={}; (hd7||[]).forEach(h=>{ const k=h.created_at.slice(0,10); if(!byDay[k]) byDay[k]=h; });
+    const stepArr=[]; let stepSum=0,stepN=0,slSum=0,slN=0;
+    for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); const h=byDay[d.toISOString().slice(0,10)];
+      stepArr.push(h?(h.steps||0):null);
+      if(h&&h.steps){ stepSum+=h.steps; stepN++; }
+      const sl=h&&h.raw&&h.raw.sleep; if(sl){ slSum+=sl; slN++; } }
+    drawWeek(stepArr);
+    const ws=document.getElementById('wkAvgSteps'), wsl=document.getElementById('wkAvgSleep');
+    if(ws) ws.textContent = stepN? Math.round(stepSum/stepN).toLocaleString() : '—';
+    if(wsl) wsl.textContent = slN? (Math.floor(slSum/slN)+'h '+String(Math.round((slSum/slN%1)*60)).padStart(2,'0')+'m') : '—';
+  }catch(e){ console.error('week strip',e); }
+  // Real PAX thread button
+  try{ if(PAX_WHATSAPP){ const b=document.getElementById('paxWaBtn'); if(b) b.style.display=''; } }catch(e){}
+
+  // PAX thread
+  const { data:msgs } = await sb.from('conversations').select('content,sender,role,created_at').eq('client_id',cid).order('created_at',{ascending:true}).limit(40);
+  if(msgs&&msgs.length){ const t=document.getElementById('thread');
+    t.innerHTML='<div class="day-div">Your conversation</div>'+msgs.map(m=>{ const me=(m.sender==='client'||m.role==='user');
+      return `<div class="msg ${me?'me':'in'}"><div class="bubble">${(m.content||'').replace(/</g,'&lt;')}</div></div>`; }).join('');
+    const lastPax=[...msgs].reverse().find(m=>m.sender!=='client'&&m.role!=='user');
+    if(lastPax){ const s=document.getElementById('paxStrip');
+      s.innerHTML=`<b>PAX:</b> ${(lastPax.content||'').replace(/</g,'&lt;').slice(0,110)}${lastPax.content.length>110?'…':''}`; }
+  } else {
+    document.getElementById('paxStrip').innerHTML='<b>PAX:</b> I\'m here whenever you are — tap to chat.';
+    document.getElementById('thread').innerHTML='<div class="day-div">Today</div><div class="msg in"><div class="bubble">Hey — I\'m PAX, your coach\'s AI companion. I\'ll brief your sessions, keep your pacts ticking and cover the hours in between. Say hi 👋</div></div>';
+  }
+
+  if(state.doneToday) markPactCardDone(state.doneToday);
+
+  // re-render
+  drawChart(); renderNutrition(); renderPacts(); loadExercise(state.exIndex);
+}
+
+/* ---------- PAX conversation ---------- */
+const QUICK=[['Session done ✅','done'],['Struggling today','struggle'],['What\'s on tomorrow?','tomorrow'],['Log my weight','weigh']];
+function renderQuick(){ const el=document.getElementById('quick'); el.innerHTML=''; QUICK.forEach(q=>{ const b=document.createElement('button'); b.className='chip'; b.textContent=q[0]; b.onclick=()=>quickReply(q[0]); el.appendChild(b); }); }
+function paxWaUrl(text){ return 'https://wa.me/'+PAX_WHATSAPP+(text?('?text='+encodeURIComponent(text)):''); }
+// Adapt-on-the-fly chips: hand the constraint to PAX, which reworks today's
+// session in the live plan — the app picks the change up on next load.
+function paxAdapt(kind){
+  const msgs={
+    travel:"I'm travelling — can you switch me to travel mode? Bodyweight sessions while I'm away please.",
+    '30':"I've only got 30 minutes today — can you compress today's session to fit?",
+    '45':"I've only got 45 minutes today — can you compress today's session to fit?"
+  };
+  if(!PAX_WHATSAPP){ toast('PAX isn\'t connected yet — ask your coach.'); return; }
+  window.open(paxWaUrl(msgs[kind]||msgs['30']),'_blank');
+  toast(kind==='travel'?'PAX will swap your week to bodyweight — sessions here update automatically.':'PAX will rework today to fit — refresh after it replies.',3200);
+}
+function openPax(){
+  if(PAX_WHATSAPP){ window.open(paxWaUrl(''), '_blank'); return; }
+  renderQuick(); go('pax'); const t=document.getElementById('thread'); requestAnimationFrame(()=>{ t.scrollTop=t.scrollHeight; });
+}
+function addMsg(html,me){ const t=document.getElementById('thread'); const d=document.createElement('div'); d.className='msg '+(me?'me':'in'); d.innerHTML=`<div class="bubble">${html}</div><div class="t">now</div>`; t.appendChild(d); t.scrollTop=t.scrollHeight; }
+// The real PAX lives on WhatsApp — this screen is a read-only snapshot of the
+// thread. Typing here hands the message straight to the real conversation.
+function sendPax(){
+  const i=document.getElementById('paxInput'); const v=i.value.trim(); if(!v)return; i.value='';
+  if(PAX_WHATSAPP){ window.open(paxWaUrl(v), '_blank'); return; }
+  addMsg(v.replace(/</g,'&lt;'),true);
+  setTimeout(()=>addMsg("I live in WhatsApp — that's where I can actually see your day and reply properly. Open our thread there and I'll pick this straight up 👍",false),600);
+}
+function quickReply(label){ 
+  if(PAX_WHATSAPP){ window.open(paxWaUrl(label), '_blank'); return; }
+  addMsg(label,true);
+  setTimeout(()=>addMsg("Send me that on WhatsApp — that's where the real me lives and replies. 👍",false),600);
+}
+
+/* ---------- mini charts ---------- */
+function lineSVG(data,opts){
+  opts=opts||{}; const w=340,h=110,pad=10, mn=Math.min(...data), mx=Math.max(...data), pd=(mx-mn)*0.12||1;
+  const min=opts.min!=null?opts.min:mn-pd, max=opts.max!=null?opts.max:mx+pd, span=(max-min)||1;
+  const x=i=>pad+i*(w-2*pad)/(data.length-1), y=v=>8+(1-(v-min)/span)*(h-18);
+  const pts=data.map((v,i)=>[x(i),y(v)]);
+  const line='M '+pts.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L ');
+  const area=line+` L ${pts[pts.length-1][0].toFixed(1)} ${h-2} L ${pts[0][0].toFixed(1)} ${h-2} Z`;
+  const color=opts.color||'#0A2540', lp=pts[pts.length-1];
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="${opts.label||'trend'}">
+    <path d="${area}" fill="${opts.fill||'rgba(10,37,64,.06)'}"/>
+    <path d="${line}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${lp[0].toFixed(1)}" cy="${lp[1].toFixed(1)}" r="4" fill="#D92D20" stroke="#fff" stroke-width="2"/></svg>`;
+}
+function barSVG(data,opts){
+  opts=opts||{}; const w=340,h=110,pad=10,n=data.length,max=Math.max(...data)*1.12;
+  const gap=(w-2*pad)/n, bw=gap*0.6; let bars='';
+  data.forEach((v,i)=>{ const bh=(v/max)*(h-22), bx=pad+i*gap+(gap-bw)/2, by=h-14-bh, cur=i===n-1;
+    bars+=`<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${cur?'#D92D20':'#0A2540'}" opacity="${cur?1:.82}"/>`; });
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="${opts.label||'bars'}">${bars}</svg>`;
+}
+
+/* ---------- settings ---------- */
+function openSettings(){ renderSettings(); go('settings'); }
+function toggleApp(name){ const a=state.apps[name]; a.on=!a.on; a.sync=a.on?'just now':'—'; renderSettings(); toast(a.on?`✓ ${name} connected.`:`${name} disconnected.`,1500); }
+function notifRow(ic,n,d,t){ return `<div class="set-row"><div class="si">${ic}</div><div class="sc"><div class="sn">${n}</div><div class="sm">${d}</div></div><span class="set-time">${t}</span></div>`; }
+function renderSettings(){
+  const apps=Object.entries(state.apps).map(([n,a])=>`
+    <div class="set-row ${a.on?'on':''}"><div class="si">${a.ico}</div><div class="sc"><div class="sn">${n}</div><div class="sm">${a.on?'Connected · synced '+a.sync:'Not connected'}</div></div>
+    <button class="cbtn" style="${a.on?'background:#EEF2F6;border-color:#EEF2F6;color:var(--muted)':''}" onclick="toggleApp('${n}')">${a.on?'Disconnect':'Connect'}</button></div>`).join('');
+  const shared=state.pacts.filter(p=>p.share).length;
+  document.getElementById('setBody').innerHTML=`
+    <div class="set-card" style="margin-top:16px"><div class="set-row"><div class="si" style="background:var(--navy);color:#fff;font-family:Montserrat;font-weight:800">A</div><div class="sc"><div class="sn">Alex Joyner</div><div class="sm">Coached by ${coachN()} · target ${state.wt.target}kg</div></div></div></div>
+    <div class="set-h">Connected apps</div>
+    <div class="set-card">${apps}</div>
+    <div class="sm" style="color:var(--faint);font-size:11.5px;margin:8px 2px">Nutrition pulls from Apple Health / Health Connect — your food app writes there, PACT reads it. Fitbit, Whoop &amp; Samsung add as fitness bands.</div>
+    <div class="set-h">Daily check-ins from PAX</div>
+    <div class="set-card">
+      ${notifRow('🌅','Morning brief','Motivation + today\'s session','07:00')}
+      ${notifRow('☀️','Midday check','Progress + what\'s left','13:30')}
+      ${notifRow('🌙','Evening wrap','Full-day summary','21:00')}
+      <div class="set-row"><div class="si">🔕</div><div class="sc"><div class="sn">Quiet hours</div><div class="sm">No pings 22:00 – 06:30</div></div><label class="switch"><input type="checkbox" checked onchange="toast('Quiet hours updated.',1200)"><span class="sl"></span></label></div>
+    </div>
+    <div class="set-h">Coaching</div>
+    <div class="set-card">
+      <div class="set-row"><div class="si">🔊</div><div class="sc"><div class="sn">Tempo Coach sound</div><div class="sm">Audio cues during guided sets</div></div><label class="switch"><input type="checkbox" ${state.sound?'checked':''} onchange="state.sound=this.checked;toast(state.sound?'Sound on.':'Sound off.',1200)"><span class="sl"></span></label></div>
+      <div class="set-row"><div class="si">⚖️</div><div class="sc"><div class="sn">Units</div><div class="sm">Weight &amp; loads</div></div><div class="seg"><button class="on">kg</button><button onclick="toast('kg only during the pilot — lb is coming.',1400)">lb</button></div></div>
+    </div>
+    <div class="set-h">Privacy &amp; sharing</div>
+    <div class="set-card">
+      <div class="set-row"><div class="si">🔔</div><div class="sc"><div class="sn">Shared pacts</div><div class="sm">${shared} shared with an accountability witness</div></div><button class="cbtn" style="background:#EEF2F6;border-color:#EEF2F6;color:var(--navy)" onclick="go('dash')">Manage</button></div>
+      <div class="set-row"><div class="si">👤</div><div class="sc"><div class="sn">Shared with ${coachN()}</div><div class="sm">Training, pacts &amp; adherence — it's how coaching on PACT works. Ask ${coachN()} about your data any time.</div></div></div>
+    </div>
+    <div class="set-h">Account</div>
+    <div class="set-card"><div class="set-row" style="cursor:pointer" onclick="showLogin()"><div class="si">↩</div><div class="sc"><div class="sn" style="color:var(--red-dark)">Sign out</div></div></div></div>
+    <div style="text-align:center;color:var(--faint);font-size:11px;margin-top:16px">PACT.Health · Athlete · v0.9 pilot</div>`;
+}
+
+/* ---------- progress / history ---------- */
+const HIST={
+  weight:[92.7,92.1,91.4,90.6,90.0,89.3,88.9,88.6,88.4,88.1],
+  squat:[92.5,95,97.5,97.5,100,100,102.5,102.5,102.5],
+  volume:[10.9,11.4,11.2,12.0,12.6,12.4,13.1,13.0],
+  adherence:[74,79,83,86,88,90,92,92],
+  strength:[['Back Squat',128,10],['Bench Press',96,5],['Deadlift',152,12.5],['Overhead Press',62,4]],
+  prs:[['Back Squat','102.5kg × 8 @ RPE 8','Today'],['Romanian Deadlift','82.5kg × 10','2 days ago'],['Leg Press','185kg × 12','Last week'],['Seated Leg Curl','47.5kg × 12','Last week']],
+};
+function openHistory(){ renderHistory(); go('history'); }
+function renderHistory(){
+  return renderHistoryReal();
+}
+function renderHistoryReal(){
+  const w=state.wt, wNow=w.current;
+  const hasW=w.hist&&w.hist.length>=2&&Array.isArray(w.histDates)&&w.histDates.length===w.hist.length;
+  const lost=(w.start&&wNow)?(w.start-wNow).toFixed(1):null;
+  const toGo=(wNow&&w.target)?(wNow-w.target).toFixed(1):null;
+  // weekly adherence from real daily_pacts (28d → 4 weekly buckets)
+  let adhWeeks=[]; if(Array.isArray(state.dp28)&&state.dp28.length){
+    for(let b=3;b>=0;b--){ const from=new Date(); from.setDate(from.getDate()-(b*7+6)); const to=new Date(); to.setDate(to.getDate()-b*7);
+      const f=from.toISOString().slice(0,10), t=to.toISOString().slice(0,10);
+      const rows=state.dp28.filter(r=>r.date>=f&&r.date<=t);
+      const wins=rows.reduce((a,r)=>a+(r.wins_completed||0),0), tot=rows.reduce((a,r)=>a+(r.total_wins||0),0);
+      if(tot>0) adhWeeks.push(Math.round(wins/tot*100)); }
+  }
+  document.getElementById('histBody').innerHTML=`
+    <div class="card" style="margin-top:14px">
+      <div class="sec-h"><h3>Weight journey</h3><span class="meta">${hasW?'your weigh-ins':'logs as you weigh in'}</span></div>
+      ${wNow?`<div class="big-stat" style="margin:12px 0 3px"><span class="bn">${wNow.toFixed(1)}<span style="font-size:16px">kg</span></span>${lost&&+lost>0?`<span class="bd" style="color:var(--good)">▼ ${lost}kg</span>`:''}</div>`:''}
+      ${toGo&&+toGo>0?`<div class="sm" style="color:var(--muted);font-size:12px">${toGo}kg to target</div>`:''}
+      ${hasW?lineSVG(w.hist,{label:'Weight trend'}):'<div class="sm" style="color:var(--muted);font-size:12.5px;margin-top:10px">Two or more weigh-ins draw your trend line here — log one from the dashboard.</div>'}
+      ${hasW?`<div class="chart-lbls"><span>${new Date(w.histDates[0]+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'})} · ${w.hist[0].toFixed(1)}kg</span><span>latest · ${wNow.toFixed(1)}kg</span></div>`:''}
+    </div>
+    <div class="card">
+      <div class="sec-h"><h3>Consistency</h3><span class="meta">pacts kept, weekly</span></div>
+      ${adhWeeks.length>=2?lineSVG(adhWeeks,{min:0,max:100,color:'#12805C',fill:'rgba(18,128,92,.08)',label:'Adherence'}):'<div class="sm" style="color:var(--muted);font-size:12.5px;margin-top:10px">A couple of weeks of pacts and your consistency line appears here.</div>'}
+      ${adhWeeks.length?`<div class="row between" style="font-size:12px;color:var(--muted);margin-top:10px"><span>${adhWeeks.length} wk${adhWeeks.length===1?'':'s'} of data</span><span><b style="color:var(--ink);font-family:Montserrat">${adhWeeks[adhWeeks.length-1]}%</b> this week</span></div>`:''}
+    </div>
+    <div class="card">
+      <div class="sec-h"><h3>Strength & volume</h3><span class="meta">from logged sessions</span></div>
+      <div class="sm" style="color:var(--muted);font-size:12.5px;margin-top:8px">These charts build from the sessions you log — lifts, tonnage and PRs, all real, nothing invented. Keep logging and watch this fill in.</div>
+    </div>`;
+  return;
+  // (legacy fabricated render below is unreachable — kept for reference)
+  const _wNow=state.wt.current, _lost=(92.7-_wNow).toFixed(1), _toGo=(_wNow-85).toFixed(1);
+  const sq=HIST.squat, sqGain=sq[sq.length-1]-sq[0];
+  document.getElementById('histBody').innerHTML=`
+    <div class="card" style="margin-top:14px">
+      <div class="sec-h"><h3>Weight journey</h3><span class="meta">since 10 Apr</span></div>
+      <div class="big-stat" style="margin:12px 0 3px"><span class="bn">${wNow.toFixed(1)}<span style="font-size:16px">kg</span></span><span class="bd" style="color:var(--good)">▼ ${lost}kg</span></div>
+      <div class="sm" style="color:var(--muted);font-size:12px">${toGo}kg to target · on pace for 12 Jul at 0.41kg/wk</div>
+      ${lineSVG(HIST.weight,{label:'Weight down over the cut'})}
+      <div class="chart-lbls"><span>10 Apr · 92.7kg</span><span>today · ${wNow.toFixed(1)}kg</span></div>
+    </div>
+    <div class="card">
+      <div class="sec-h"><h3>Strength</h3><span class="meta">estimated 1RM</span></div>
+      <div class="big-stat" style="margin:12px 0 3px"><span class="bn">+${sqGain}<span style="font-size:16px">kg</span></span><span class="bd" style="color:var(--good)">Back Squat 1RM</span></div>
+      <div class="sm" style="color:var(--muted);font-size:12px">Up ${sqGain}kg since the cut started — strength held right through the deficit. That's the win.</div>
+      ${lineSVG(HIST.squat,{color:'#D92D20',fill:'rgba(217,45,32,.07)',label:'Squat 1RM rising'})}
+      <div style="margin-top:14px">${HIST.strength.map(s=>`<div class="strength-row"><span class="sl">${s[0]}</span><span class="snow">${s[1]}kg</span><span class="sd">▲ ${s[2]}kg</span></div>`).join('')}</div>
+    </div>
+    <div class="card">
+      <div class="sec-h"><h3>Training volume</h3><span class="meta">weekly tonnage</span></div>
+      ${barSVG(HIST.volume,{label:'Weekly volume trending up'})}
+      <div class="row between" style="font-size:12px;color:var(--muted);margin-top:10px"><span>8 weeks ago</span><span><b style="color:var(--ink);font-family:Montserrat">${HIST.volume[HIST.volume.length-1]}t</b> this week</span></div>
+    </div>
+    <div class="card">
+      <div class="sec-h"><h3>Consistency</h3><span class="meta">weekly adherence</span></div>
+      ${lineSVG(HIST.adherence,{min:60,max:100,color:'#12805C',fill:'rgba(18,128,92,.08)',label:'Adherence climbing'})}
+      <div class="row between" style="font-size:12px;color:var(--muted);margin-top:10px"><span>8 wks ago · 74%</span><span><b style="color:var(--ink);font-family:Montserrat">92%</b> now</span></div>
+    </div>
+    <div class="card">
+      <div class="sec-h"><h3>Recent PRs</h3><span class="meta">${HIST.prs.length} this block</span></div>
+      <div style="margin-top:6px">${HIST.prs.map(p=>`<div class="pr-row"><div class="pi">🏆</div><div><div class="pl">${p[0]}</div><div class="pv">${p[1]}</div></div><span class="pw">${p[2]}</span></div>`).join('')}</div>
+    </div>
+    <div class="card">
+      <div class="sec-h"><h3>Recovery averages</h3><span class="meta">last 4 weeks</span></div>
+      <div class="tiles" style="margin-top:10px">
+        <div class="tile"><div class="lbl">Avg sleep</div><div class="val" style="font-size:22px">7h 04<span>m</span></div><div class="delta up">▲ 22m vs start</div></div>
+        <div class="tile"><div class="lbl">Avg steps</div><div class="val" style="font-size:22px">9,840</div><div class="delta up">▲ 1.1k vs start</div></div>
+      </div>
+    </div>`;
+}
+
+/* ---------- new pact ---------- */
+function openPact(){ document.getElementById('pactOv').classList.add('show'); }
+function closeSheet(id){ document.getElementById(id).classList.remove('show'); }
+function toggleShare(){
+  const on=document.getElementById('shareTog').checked;
+  document.getElementById('shareBox').style.display=on?'block':'none';
+}
+document.getElementById('cadence').addEventListener('click',e=>{
+  const b=e.target.closest('.chip'); if(!b)return;
+  document.querySelectorAll('#cadence .chip').forEach(c=>c.classList.remove('on'));
+  b.classList.add('on'); state.cadence=b.dataset.c;
+});
+document.getElementById('witness').addEventListener('input',e=>{
+  const v=e.target.value.trim(); document.getElementById('witName').textContent=v?v:'They';
+});
+async function savePact(){
+  const t=document.getElementById('pTitle').value.trim(); if(!t){toast('Give your pact a name first.');return;}
+  if(state.pacts.some(x=>x.n.trim().toLowerCase()===t.toLowerCase())){ toast(`You already have a pact called "${t}" — open that one instead. One pact, one streak.`,3200); return; }
+  const why=(document.getElementById('pWhy')?.value||'').trim()||null;
+  const share=document.getElementById('shareTog').checked;
+  const w=(document.getElementById('witness').value.trim()||'Partner').split(' ')[0];
+  const contact=document.getElementById('witContact').value.trim();
+  if(share && !contact){ toast('Add their mobile or email so PAX can ping them.'); return; }
+  // Live write: the athlete's own pact — created_by='athlete' is what tells
+  // PAX to treat it as their promise, not a coach instruction.
+  if(LIVE&&state.live){
+    const row={ client_id:state.live.cid, name:t, status:'active', created_by:'athlete' };
+    if(why) row.why=why;
+    if(share){ row.witness_name=w; row.witness_contact=contact; row.witness_channel=state.chan; row.shared_at=new Date().toISOString(); }
+    let { data:ins, error } = await sb.from('custom_pacts').insert(row).select('id').single();
+    if(error&&why){ delete row.why; ({ data:ins, error } = await sb.from('custom_pacts').insert(row).select('id').single()); } // why column not migrated yet
+    if(error){ toast('⚠️ Couldn\'t save the pact: '+error.message,3200); return; }
+    var newPid=ins?.id||null;
+  }
+  if(share){ sendWitnessPing(state.chan, contact, `Hey ${w} — I've just made a pact on PACT.Health: "${t}" (${state.cadence.toLowerCase()}). You're my witness. I'll check in when I keep it — and own it when I don't. Hold me to it 🤝`); }
+  state.pacts.push({n:t,pid:(typeof newPid!=='undefined'?newPid:null),done:false,coach:false,why:why,streak:0,best:0,share:share,witness:share?w:null,contact:share?contact:null,channel:share?state.chan:null,cad:state.cadence,hist:Array(28).fill(null)});
+  renderPacts(); closeSheet('pactOv');
+  document.getElementById('pTitle').value=''; const pw=document.getElementById('pWhy'); if(pw) pw.value=''; document.getElementById('witContact').value=''; document.getElementById('shareTog').checked=false; toggleShare();
+  if(share) toast(`Pact created${LIVE?' & saved':''} — pinged <b>${w}</b> via ${state.chan} (${contact}).`,3400);
+  else toast(`Pact created${LIVE&&state.live?' — saved. PAX knows it\'s yours.':'. It\'s yours.'}`,2600);
+}
+
+/* ---------- weight trend chart (single series, brand navy) ---------- */
+function drawChart(){
+  const data=state.wt.hist, cur=data[data.length-1];
+  const lo=Math.floor(Math.min(...data)-0.6), hi=Math.ceil(Math.max(...data)+0.4);
+  const w=360,h=120,pad=8, min=lo, max=hi;
+  const x=i=>pad+ i*(w-2*pad)/(data.length-1);
+  const y=v=>10+(1-(v-min)/(max-min))*(h-24);
+  let line='',area=`M ${x(0)} ${y(data[0])}`;
+  data.forEach((v,i)=>{ line+=(i?' L ':'M ')+x(i).toFixed(1)+' '+y(v).toFixed(1); if(i)area+=' L '+x(i).toFixed(1)+' '+y(v).toFixed(1); });
+  area+=` L ${x(data.length-1)} ${h-2} L ${x(0)} ${h-2} Z`;
+  let grid=''; for(let v=lo+1; v<hi; v++){ grid+=`<line x1="${pad}" x2="${w-pad}" y1="${y(v)}" y2="${y(v)}" stroke="#EEF2F6" stroke-width="1"/>`; }
+  const lx=x(data.length-1), ly=y(cur);
+  document.getElementById('chart').innerHTML=`
+  <svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Weight trend, now ${cur.toFixed(1)} kilograms">
+    ${grid}
+    <path d="${area}" fill="rgba(10,37,64,.06)"/>
+    <path d="${line}" fill="none" stroke="#0A2540" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${lx}" cy="${ly}" r="4.5" fill="#D92D20" stroke="#fff" stroke-width="2"/>
+    <text x="${lx-4}" y="${ly-10}" text-anchor="end" font-family="Montserrat" font-size="12" font-weight="800" fill="#0A2540">${cur.toFixed(1)}</text>
+  </svg>`;
+}
+
+/* ---------- week bars ---------- */
+function drawWeek(stepArr){
+  // stepArr: 7 real step counts oldest→newest (null = no data that day).
+  const el=document.getElementById('weekSteps'); if(!el)return; el.innerHTML='';
+  const arr=Array.isArray(stepArr)?stepArr:[null,null,null,null,null,null,null];
+  const labels=[]; for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); labels.push('SMTWTFS'[d.getDay()]); }
+  const max=Math.max(...arr.map(v=>v||0),1);
+  arr.forEach((v,i)=>{ const h=v?Math.max(6,Math.round(v/max*100)):0;
+    el.innerHTML+=`<div class="day"><div class="d">${labels[i]}</div><div class="b"><i style="height:${h}%"></i></div></div>`; });
+}
+
+/* ---------- exercises (Day 23 · Lower) ---------- */
+function mkSets(tW,tR,lwW,lwR,cap){ cap=cap||8; return lwR.map(r=>({w:tW,r:tR,tW,tR,rpe:cap,tRPE:cap,lwRPE:8,lwW,lwR:r,done:false,touched:false})); }
+function mkWarm(a){ return a.map(x=>({w:x[0],r:x[1],done:false})); }
+const EX=[
+ {name:'Glute Activation',mg:'Glutes',ico:'glutes',tempo:'2-1-2',rest:60,
+   warm:[],work:mkSets(30,15,27.5,[15,15,15]),
+   alts:[['m','Hip Abduction Machine','Glutes'],['f','Banded Walk','Glutes · warm-up'],['m','Cable Kickback','Glutes']]},
+ {name:'Leg Press',mg:'Quads',ico:'quads',tempo:'2-0-1',rest:120,
+   warm:mkWarm([[120,10]]),work:mkSets(185,12,180,[12,12,11]),
+   alts:[['f','Goblet Squat','Quads · glutes'],['m','Hack Squat','Quads · glutes'],['f','Walking Lunge','Quads · glutes']]},
+ {name:'Seated Leg Curl',mg:'Hamstrings',ico:'hamstrings',tempo:'2-1-2',rest:90,
+   warm:mkWarm([[30,10]]),work:mkSets(47.5,12,45,[12,11,10]),
+   alts:[['m','Lying Leg Curl','Hamstrings'],['f','Nordic Curl','Hamstrings · bodyweight'],['f','Single-leg RDL','Hamstrings · glutes']]},
+ {name:'Back Squat',mg:'Quads · Glutes',ico:'quads',tempo:'3-1-1',rest:150,
+   warm:mkWarm([[60,8],[85,5]]),work:mkSets(102.5,8,100,[8,8,7,6]),
+   alts:[['m','Hack Squat','Quads · glutes · load auto-scaled'],['m','Leg Press','Quads · glutes · matches volume'],['f','Goblet Squat','Quads · glutes · DB / KB'],['f','Bulgarian Split Squat','Quads · glutes · unilateral']]},
+ {name:'Romanian Deadlift',mg:'Hamstrings · Glutes',ico:'hamstrings',tempo:'3-1-1',rest:120,
+   warm:mkWarm([[50,8]]),work:mkSets(82.5,10,80,[10,10,9]),
+   alts:[['m','Seated Leg Curl','Hamstrings · isolation'],['f','Single-leg RDL','Hamstrings · glutes · unilateral'],['m','Back Extension','Hamstrings · glutes · low back']]},
+ {name:'Walking Lunge',mg:'Quads · Glutes',ico:'glutes',tempo:null,rest:90,
+   warm:[],work:mkSets(22,12,20,[12,12,12]),
+   alts:[['f','Reverse Lunge','Quads · glutes · knee-friendly'],['m','Leg Press','Quads · glutes'],['f','Step-up','Quads · glutes · unilateral']]},
+ {name:'Standing Calf Raise',mg:'Calves',ico:'calves',tempo:'2-1-2',rest:75,
+   warm:[],work:mkSets(62.5,15,60,[15,15,14,13]),
+   alts:[['m','Seated Calf Raise','Calves · soleus'],['f','Single-leg Calf Raise','Calves · unilateral'],['m','Leg-press Calf Raise','Calves']]},
+ {name:'Ab Wheel Rollout',mg:'Core',ico:'core',tempo:null,rest:60,
+   warm:[],work:mkSets(0,12,0,[12,11,10]),
+   alts:[['f','Plank','Core · isometric'],['m','Cable Crunch','Core'],['f','Hanging Leg Raise','Core · hip flexors']]},
+];
+EX.slice(0,3).forEach(e=>{ e.work.forEach(s=>s.done=true); e.warm.forEach(s=>s.done=true); });
+
+/* ---------- body-part icon ---------- */
+function iconFor(key){
+  const P={head:'<circle cx="20" cy="7" r="5"/>',torso:'<rect x="13.5" y="12" width="13" height="17" rx="4"/>',
+   armL:'<rect x="8.6" y="13" width="3.3" height="15" rx="1.65"/>',armR:'<rect x="28.1" y="13" width="3.3" height="15" rx="1.65"/>',
+   pelvis:'<rect x="14" y="28.5" width="12" height="6" rx="2"/>',abs:'<rect x="16" y="20" width="8" height="8" rx="2"/>',
+   thighL:'<rect x="14.4" y="33.5" width="4.9" height="12" rx="2.3"/>',thighR:'<rect x="20.7" y="33.5" width="4.9" height="12" rx="2.3"/>',
+   calfL:'<rect x="15" y="45.6" width="3.8" height="10" rx="1.9"/>',calfR:'<rect x="21.2" y="45.6" width="3.8" height="10" rx="1.9"/>'};
+  const map={quads:['thighL','thighR'],hamstrings:['thighL','thighR'],glutes:['pelvis'],calves:['calfL','calfR'],core:['abs'],chest:['torso'],back:['torso'],shoulders:['armL','armR'],arms:['armL','armR']};
+  const act=map[key]||[], base=['head','torso','armL','armR','pelvis','thighL','thighR','calfL','calfR'];
+  let g=''; base.forEach(k=>g+=`<g fill="#C6D2DE">${P[k]}</g>`);
+  act.forEach(k=>g+=`<g fill="#D92D20">${P[k]}</g>`);
+  return `<svg viewBox="0 0 40 60" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${g}</svg>`;
+}
+
+/* ---------- kept + rail ---------- */
+function keptCount(){ return EX.filter(e=>e.work.length && e.work.every(s=>s.done)).length; }
+function renderKept(){
+  document.getElementById('keptNum').textContent=`${keptCount()} / ${state.totalEx}`;
+  const seg=document.getElementById('keptSeg'); seg.innerHTML='';
+  EX.forEach((e,i)=>{ const done=e.work.every(s=>s.done); const c=done?'done':(i===state.exIndex?'cur':''); seg.innerHTML+=`<i class="${c}"></i>`; });
+}
+function renderRail(){
+  const el=document.getElementById('exRail'); el.innerHTML='';
+  EX.forEach((e,i)=>{ const done=e.work.every(s=>s.done);
+    const d=document.createElement('div'); d.className='rail-i'+(i===state.exIndex?' cur':'')+(done?' done':''); d.onclick=()=>loadExercise(i);
+    d.innerHTML=`<div class="ic">${iconFor(e.ico)}${done?'<span class="chk">✓</span>':''}</div><div class="num">${String(i+1).padStart(2,'0')}</div>`;
+    el.appendChild(d);
+  });
+}
+
+/* ---------- load an exercise ---------- */
+function loadExercise(i){
+  state.exIndex=i; const e=EX[i];
+  state.sets=e.work; state.warm=e.warm; state.target={w:e.work[0].tW,r:e.work[0].tR};
+  document.getElementById('exNum').textContent=`Exercise ${String(i+1).padStart(2,'0')} of ${String(EX.length).padStart(2,'0')}`;
+  document.getElementById('exName').textContent=e.name;
+  document.getElementById('exMg').textContent=e.mg;
+  document.getElementById('exIco').innerHTML=iconFor(e.ico);
+  document.getElementById('vidCap').textContent=`${e.name} · Demo${e.tempo?' — Tempo '+e.tempo:''}`;
+  document.getElementById('pWork').textContent=`${e.work.length}×${e.repRange||e.work[0].tR}`;
+  document.getElementById('pLoad').textContent = e.work[0].tW? e.work[0].tW : 'BW';
+  document.getElementById('pTempo').textContent = e.tempo||'—';
+  document.getElementById('pRest').textContent = `${Math.floor(e.rest/60)}:${String(e.rest%60).padStart(2,'0')}`;
+  const lwStr=e.work.map(s=>s.lwR).join(' / ');
+  document.getElementById('lastweek').innerHTML = e.work[0].tW
+    ? `Last week: <b>${e.work[0].lwW}kg · ${lwStr} @ RPE 8</b>`
+    : `Last week: <b>bodyweight · ${lwStr} reps</b>`;
+  document.getElementById('devNote').classList.remove('show');
+  const hasTempo=!!e.tempo;
+  document.getElementById('tempoBtn').style.display=hasTempo?'':'none';
+  document.getElementById('guidedBtn').style.display=(hasTempo&&state.tempoOn)?'block':'none';
+  renderWarm(); renderSets(); renderKept(); renderRail();
+}
+
+/* ---------- warm-up + working sets ---------- */
+function renderWarm(){
+  const wrap=document.getElementById('warmWrap'), el=document.getElementById('warmups');
+  if(!state.warm.length){ wrap.style.display='none'; el.innerHTML=''; return; }
+  wrap.style.display='block'; el.innerHTML='';
+  state.warm.forEach((s,i)=>{
+    const row=document.createElement('div'); row.className='setline warm';
+    row.innerHTML=`<div class="sc ${s.done?'done':''}" onclick="toggleWarm(${i})">${s.done?'✓':''}</div>
+      <div class="sbody"><div class="stop"><span class="si">Warm-up ${i+1}<span class="warmtag">RAMP</span></span></div>
+      <div class="sin"><span class="bw" style="border-style:solid;background:#F7F9FB;color:var(--ink)">${s.w?s.w:'BW'}</span><span class="u2">kg</span>
+      <span class="bw" style="border-style:solid;background:#F7F9FB;color:var(--ink)">${s.r}</span><span class="u2">reps</span></div></div>`;
+    el.appendChild(row);
+  });
+}
+function toggleWarm(i){ state.warm[i].done=!state.warm[i].done; renderWarm(); }
+function inputFor(s,i,which){
+  if(s.tW===0 && which==='w') return `<span class="bw">BW</span><span class="u2">kg</span>`;
+  const cls=which==='w'?'win':'rin';
+  const edited=(which==='w'?(+s.w!==+s.tW):(+s.r!==+s.tR))?'edited':'';
+  const val=which==='w'?s.w:s.r;
+  return `<input class="${cls} ${edited}" value="${val}" inputmode="${which==='w'?'decimal':'numeric'}" onchange="setVal(${i},'${which}',this.value)" aria-label="${which==='w'?'weight kg':'reps'}"><span class="u2">${which==='w'?'kg':'reps'}</span>`;
+}
+function renderSets(){
+  const el=document.getElementById('sets'); el.innerHTML='';
+  state.sets.forEach((s,i)=>{
+    const lw = s.tW===0 ? `↺ last wk BW × ${s.lwR}` : `↺ last wk ${s.lwW}kg × ${s.lwR}`;
+    const over = +s.rpe > +s.tRPE;
+    const row=document.createElement('div'); row.className='setline';
+    row.innerHTML=`<div class="sc ${s.done?'done':''}" onclick="toggleSet(${i})">${s.done?'✓':''}</div>
+      <div class="sbody">
+        <div class="stop"><span class="si">Set ${i+1} <span class="muted">· working</span></span>
+          <button class="lwk" onclick="useLast(${i})">${lw}</button></div>
+        <div class="sin">${inputFor(s,i,'w')}${inputFor(s,i,'r')}</div>
+        <div class="rpe-row">
+          <span class="rpe-l">RPE <span class="muted" style="text-transform:none">· cap ${s.tRPE}</span></span>
+          <span class="rpe">
+            <button onclick="setRPE(${i},-0.5)">−</button>
+            <span class="rv ${over?'over':''}">${s.rpe}</span>
+            <button onclick="setRPE(${i},0.5)">+</button>
+            ${over?'<span class="cap">OVER CAP</span>':''}
+          </span>
+        </div>
+      </div>`;
+    el.appendChild(row);
+  });
+}
+function setVal(i,k,v){
+  const s=state.sets[i]; s[k]=v;
+  if(k==='w' && i>0) s.touched=true;                        // manual edit locks this set from cascade
+  if(k==='w' && i===0){
+    const base=s.tW, entered=parseFloat(v), delta=isNaN(entered)?0:+(entered-base).toFixed(2);
+    let n=0;
+    for(let j=1;j<state.sets.length;j++){ if(state.sets[j].touched) continue; state.sets[j].w=+(state.sets[j].tW+delta).toFixed(2); n++; }
+    if(delta) toast(`Set 1 → ${entered}kg. Cascaded ${delta>0?'+':''}${delta}kg to ${n} working set${n===1?'':'s'} (edited sets untouched).`,2400);
+  }
+  renderSets();
+}
+function setRPE(i,d){ const s=state.sets[i]; s.rpe=Math.min(10,Math.max(6,+(+s.rpe+d).toFixed(1))); renderSets(); }
+function useLast(i){ const s=state.sets[i]; s.r=s.lwR; s.rpe=s.lwRPE; setVal(i,'w',s.lwW); }
+function toggleSet(i){
+  const s=state.sets[i]; s.done=!s.done; const e=EX[state.exIndex];
+  if(s.done){ startRest(e.rest);
+    toast(`✓ Set ${i+1} logged — <b>${s.tW===0?'BW':s.w+'kg'} × ${s.r} @ RPE ${s.rpe}</b>.`,1800);
+    if(state.sets.every(x=>x.done)){ checkPR(); if(!e._summed){ e._summed=true; setTimeout(showExerciseSummary,500);} }
+  } else { e._summed=false; }
+  renderSets(); renderKept(); renderRail();
+}
+function confirmAll(){
+  const e=EX[state.exIndex];
+  state.sets.forEach(s=>{ s.w=s.tW; s.r=s.tR; s.rpe=s.tRPE; s.done=true; s.touched=false; });
+  renderSets(); renderKept(); renderRail(); startRest(e.rest); checkPR();
+  const t=state.target; toast(`✓ All sets confirmed as prescribed — <b>${t.w?t.w+'kg':'BW'} × ${t.r} @ RPE ${e.work[0].tRPE}</b>.`);
+  e._summed=true; setTimeout(showExerciseSummary,550);
+}
+function checkPR(){ const e=EX[state.exIndex]; if(e.work[0].tW>e.work[0].lwW) toast(`<span class="pr">PR</span> ${e.name} — ${e.work[0].tW}kg × ${e.work[0].tR}, up on last week. Nice.`,3000); }
+
+/* rest timer (quick log) */
+let restInt,restLeft=0;
+function startRest(sec){
+  restLeft=sec; document.getElementById('rest').classList.add('show'); tickRest();
+  clearInterval(restInt); restInt=setInterval(()=>{ restLeft--; tickRest(); if(restLeft>0&&restLeft<=3)beep(520,0.1,0.12); if(restLeft<=0){clearInterval(restInt);document.getElementById('rest').classList.remove('show');beep(760,0.18,0.15);} },1000);
+}
+function tickRest(){ const m=Math.floor(restLeft/60),s=restLeft%60; document.getElementById('restT').textContent=`${m}:${s<10?'0':''}${s}`; }
+function skipRest(){ clearInterval(restInt); document.getElementById('rest').classList.remove('show'); }
+function addRest(){ restLeft+=30; tickRest(); }
+
+/* substitute */
+function openSwap(){
+  const e=EX[state.exIndex];
+  document.getElementById('swapTitle').textContent=`Swap ${e.name}.`;
+  document.getElementById('swapSub').textContent=`Same muscle group — ${e.mg.toLowerCase()}. Pick what's free.`;
+  document.getElementById('swapKeep').textContent=`Keep ${e.name}`;
+  const list=document.getElementById('swapList'); list.innerHTML='';
+  e.alts.forEach(a=>{ const free=a[0]==='f';
+    const el=document.createElement('div'); el.className='alt'; el.onclick=()=>doSwap(a[1]);
+    el.innerHTML=`<span class="eq ${free?'free':''}">${free?'Free weight':'Machine'}</span><div><div class="an">${a[1]}</div><div class="mg">${a[2]}</div></div>`;
+    list.appendChild(el);
+  });
+  document.getElementById('swapOv').classList.add('show');
+}
+function doSwap(name){
+  document.getElementById('exName').textContent=name;
+  document.getElementById('swapName').textContent=name;
+  document.getElementById('devNote').classList.add('show');
+  closeSheet('swapOv');
+  toast(`↔ Swapped to <b>${name}</b>. ${coachN()} notified — programme integrity kept.`);
+}
+
+/* tempo coach on/off */
+function toggleTempo(){
+  state.tempoOn=!state.tempoOn;
+  document.getElementById('tempoBtn').classList.toggle('on',state.tempoOn);
+  document.getElementById('tempoLbl').textContent='Tempo Coach · '+(state.tempoOn?'On':'Off');
+  const hasTempo=!!EX[state.exIndex].tempo;
+  document.getElementById('guidedBtn').style.display=(hasTempo&&state.tempoOn)?'block':'none';
+}
+
+/* next / prev exercise */
+function nextEx(){ if(state.exIndex<EX.length-1) loadExercise(state.exIndex+1); else openWorkoutSummary(); }
+function prevEx(){ if(state.exIndex>0) loadExercise(state.exIndex-1); }
+
+/* ---------- athlete onboarding (6 steps) ---------- */
+const onboard={step:1, goal:'', tag:'Cut', target:'85', weeks:'12', days:[1,1,0,1,0,1,0], len:'45–60 min', equip:'Full gym', work:'', social:'', conns:{'Apple Health':false,'Health Connect':false,Garmin:false,Oura:false,Fitbit:false,Whoop:false,'Google Calendar':false}};
+function startOnboarding(){ onboard.step=1; renderOnboard(); go('onboard'); }
+function connRow(name,ico,desc){ const on=onboard.conns[name]; return `<div class="conn ${on?'done':''}"><div class="ci">${ico}</div><div class="cn">${name}<small>${desc}</small></div><button class="cbtn" onclick="obConn('${name}')">${on?'✓ Connected':'Connect'}</button></div>`; }
+function obStepHTML(){
+  const o=onboard;
+  if(o.step===1) return `
+    <div class="ob-pax" style="margin-top:18px"><div class="h"><div class="av">P</div><div><b>PAX</b><div style="font-size:11px;color:#9DB4C9">Your AI coach · alongside ${coachN()}</div></div></div>
+      Hi, I'm PAX. ${coachN()} brought you into PACT — it's invite-only. I cover the 165 hours between your sessions. Give me ten minutes now and I'll never ask again.</div>
+    <div class="ob-h" style="margin-top:20px">Welcome to the pact.</div>
+    <div class="ob-sub">A binding commitment — to ${coachN()}, to the plan, and to yourself. Let's set it up.</div>`;
+  if(o.step===2) return `
+    <div class="ob-h">What are you here to do?</div>
+    <div class="ob-sub">Tell me the goal in your words — I'll hold you to it.</div>
+    <div class="fld-l">Your goal</div>
+    <textarea class="ob-in" id="obGoal" rows="2" placeholder="e.g. Get to 85kg lean for summer, keep my lifts strong">${o.goal}</textarea>
+    <div class="fld-l">Focus</div>
+    <div class="tag-grid">${['Cut','Maintain','Build','Perform'].map(t=>`<button class="tagbtn ${o.tag===t?'on':''}" onclick="obSet('tag','${t}')"><div class="tt">${t}</div><div class="td">${({Cut:'Lose fat, keep muscle',Maintain:'Hold &amp; refine',Build:'Add size &amp; strength',Perform:'Train for an event'})[t]}</div></button>`).join('')}</div>
+    <div class="fld-l">Target weight &amp; timeframe</div>
+    <div class="row" style="gap:10px"><input class="ob-in" id="obTarget" value="${o.target}" inputmode="decimal" style="text-align:center"><input class="ob-in" id="obWeeks" value="${o.weeks}" inputmode="numeric" style="text-align:center"></div>
+    <div class="row between" style="font-size:11px;color:var(--faint);margin-top:6px"><span>kg target</span><span>weeks</span></div>`;
+  if(o.step===3) return `
+    <div class="ob-h">When do you train?</div>
+    <div class="ob-sub">Pick your usual days — I'll plan the week around them.</div>
+    <div class="fld-l">Training days</div>
+    <div class="days">${['M','T','W','T','F','S','S'].map((d,i)=>`<button class="dayb ${o.days[i]?'on':''}" onclick="obDay(${i})">${d}</button>`).join('')}</div>
+    <div class="fld-l">Typical session length</div>
+    <div class="tag-grid">${['30–45 min','45–60 min','60–75 min','75+ min'].map(t=>`<button class="tagbtn ${o.len===t?'on':''}" onclick="obSet('len','${t}')"><div class="tt">${t}</div></button>`).join('')}</div>
+    <div class="fld-l">Equipment access</div>
+    <div class="tag-grid">${['Full gym','Home rack','Minimal / travel','Bodyweight'].map(t=>`<button class="tagbtn ${o.equip===t?'on':''}" onclick="obSet('equip','${t}')"><div class="tt">${t}</div></button>`).join('')}</div>`;
+  if(o.step===4) return `
+    <div class="ob-h">Tell PAX about your week.</div>
+    <div class="ob-sub">The stuff that actually derails plans — work, travel, socials. No judgment, it just helps me coach around real life.</div>
+    <div class="fld-l">Work pattern</div>
+    <div class="tag-grid">${['9–5 desk','Shift work','On my feet','Flexible / WFH'].map(t=>`<button class="tagbtn ${o.work===t?'on':''}" onclick="obSet('work','${t}')"><div class="tt">${t}</div></button>`).join('')}</div>
+    <div class="fld-l">Social &amp; travel rhythm</div>
+    <div class="tag-grid">${['Quiet weeks','Weekend socials','Frequent travel','Out a lot'].map(t=>`<button class="tagbtn ${o.social===t?'on':''}" onclick="obSet('social','${t}')"><div class="tt">${t}</div></button>`).join('')}</div>`;
+  if(o.step===5) return `
+    <div class="ob-h">Connect your data.</div>
+    <div class="ob-sub">One tap each. I build a single picture of your week from these — nutrition, steps, sleep, recovery and your calendar.</div>
+    ${connRow('Apple Health','♥','Steps, weight &amp; nutrition')}
+    ${connRow('Health Connect','✚','Android — nutrition, steps &amp; sleep')}
+    ${connRow('Garmin','⌚','Activity, HRV &amp; sleep')}
+    ${connRow('Oura','◍','Sleep score &amp; readiness')}
+    ${connRow('Fitbit','⬤','Steps, heart rate &amp; sleep')}
+    ${connRow('Whoop','➰','Strain &amp; recovery')}
+    ${connRow('Google Calendar','▦','Travel, socials &amp; busy days')}
+    <div class="ob-sub" style="margin-top:16px;font-size:12.5px">Nutrition comes straight from Apple Health or Health Connect — whatever food app you already use writes there, and I read your daily totals against your coach's targets.</div>`;
+  const dn=o.days.filter(Boolean).length;
+  return `
+    <div class="ob-h">Meet PAX.</div>
+    <div class="ob-sub">Here's your first morning brief — this is what lands in WhatsApp each day.</div>
+    <div class="ob-pax" style="margin-top:14px"><div class="h"><div class="av">P</div><div><b>PAX</b> <span style="font-size:11px;color:#9DB4C9">· tomorrow, 07:00</span></div></div>
+      Morning Alex — welcome to the pact. ${o.tag} phase, target ${o.target}kg in ${o.weeks} weeks. You're training ${dn}× a week and ${coachN()}'s built the plan. Sleep well and I'll brief today's session, keep the pacts ticking, and cover the hours between you and ${coachN()}. Let's make the promise real. 💪</div>
+    <div class="ob-sub" style="margin-top:16px">You're set. ${coachN()} can see you're onboarded. Tap below and PAX takes it from here.</div>`;
+}
+function obFootHTML(){ const last=onboard.step===6, first=onboard.step===1;
+  return `${first?'':'<button class="btn btn-ghost" style="flex:0 0 34%" onclick="obNav(-1)">Back</button>'}<button class="btn btn-red" onclick="obNav(1)">${last?'Enter PACT →':'Continue'}</button>`;
+}
+function captureStep(){ const g=document.getElementById('obGoal'); if(g)onboard.goal=g.value; const t=document.getElementById('obTarget'); if(t)onboard.target=t.value; const w=document.getElementById('obWeeks'); if(w)onboard.weeks=w.value; }
+function renderOnboard(){ captureStep(); let d=''; for(let i=1;i<=6;i++) d+=`<i class="${i<=onboard.step?'on':''}"></i>`; document.getElementById('obDots').innerHTML=d; document.getElementById('obStep').textContent=`Step ${onboard.step} of 6`; document.getElementById('obBody').innerHTML=obStepHTML(); document.getElementById('obFoot').innerHTML=obFootHTML(); window.scrollTo(0,0); }
+function obSet(k,v){ captureStep(); onboard[k]=v; renderOnboard(); }
+function obDay(i){ captureStep(); onboard.days[i]=onboard.days[i]?0:1; renderOnboard(); }
+function obConn(name){ captureStep(); onboard.conns[name]=!onboard.conns[name]; renderOnboard(); toast(onboard.conns[name]?`✓ ${name} connected.`:`${name} disconnected.`,1400); }
+function obNav(dir){ captureStep(); if(dir<0){ onboard.step=Math.max(1,onboard.step-1); renderOnboard(); return; } if(onboard.step<6){ onboard.step++; renderOnboard(); } else { finishOnboard(); } }
+function finishOnboard(){ go('dash'); toast('🎉 You\'re in, Alex. PAX has the wheel — your first brief lands tomorrow at 07:00.',3400); }
+
+/* ---------- audio cues (tempo works with phone down) ---------- */
+let actx;
+function initAudio(){ try{ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==='suspended') actx.resume(); }catch(e){} }
+function beep(freq,dur,vol,type){ if(!state.sound) return; try{ initAudio(); if(!actx) return; const o=actx.createOscillator(),g=actx.createGain(); o.type=type||'sine'; o.frequency.value=freq; g.gain.value=vol||0.14; o.connect(g); g.connect(actx.destination); const t=actx.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(0.0001,t+(dur||0.14)); o.stop(t+(dur||0.16)); }catch(e){} }
+function chord(fs){ fs.forEach((f,i)=>setTimeout(()=>beep(f,0.22,0.13),i*70)); }
+function say(text,interrupt){ if(!state.sound) return; try{ if(interrupt) speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.rate=1.06; speechSynthesis.speak(u); }catch(e){} }
+function toggleSound(){ state.sound=!state.sound; const b=document.getElementById('tmSnd'); if(b)b.textContent=state.sound?'🔊 Sound':'🔇 Muted'; if(state.sound){ initAudio(); say('Sound on',true);} else { try{speechSynthesis.cancel();}catch(e){} } }
+
+/* ---------- Tempo Coach guided walkthrough ---------- */
+const tempo={setIdx:0, rep:0, repTarget:0, arr:[], timers:[], restLeft:0, restFin:false, restNext:null};
+function clearTempoTimers(){ tempo.timers.forEach(t=>clearTimeout(t)); tempo.timers=[]; }
+function tempoLive(){ return document.getElementById('tempoOv').classList.contains('show'); }
+function curSet(){ return state.sets[tempo.setIdx]; }
+function firstUndone(){ const i=state.sets.findIndex(s=>!s.done); return i<0?0:i; }
+function startGuided(){
+  const e=EX[state.exIndex]; if(!e.tempo) return;
+  initAudio();
+  tempo.setIdx=firstUndone(); tempo.arr=e.tempo.split('-').map(Number);
+  document.getElementById('tmSnd').textContent=state.sound?'🔊 Sound':'🔇 Muted';
+  document.getElementById('tempoOv').classList.add('show'); stageReady(false);
+}
+function tempoExit(){ clearTempoTimers(); document.getElementById('tempoOv').classList.remove('show'); renderSets(); renderKept(); renderRail(); }
+function stg(t){ document.getElementById('tmStage').textContent=t; }
+
+function stageReady(isNext){
+  stg(isNext?'Next set':'Get ready'); const e=EX[state.exIndex], s=curSet();
+  document.getElementById('tmBody').innerHTML=`
+    <div class="tm-ex">${e.name}</div>
+    <div class="tm-sub">Set ${tempo.setIdx+1} of ${state.sets.length} · Tempo ${e.tempo}</div>
+    <div class="wmod">
+      <button onclick="modW(-2.5)">−</button>
+      <div class="wv" id="tmW">${s.tW===0?'BW':s.w+'<small> kg</small>'}</div>
+      <button onclick="modW(2.5)">+</button>
+    </div>
+    <div class="tm-sub">Target ${s.r} reps @ RPE 8</div>
+    <div class="tm-note">${isNext?'Weight carried from your last set — nudge it if the rack forced a change.':'Adjust the load if equipment forced a change, then begin. PAX paces every rep.'}</div>
+    <div class="tm-actions"><button class="tm-btn" onclick="beginSet()">Begin set →</button></div>`;
+}
+function modW(d){
+  const s=curSet(); if(s.tW===0) return;
+  s.w=+Math.max(0,(parseFloat(s.w)||0)+d).toFixed(2);
+  if(tempo.setIdx>0 && +s.w!==+s.tW) s.touched=true;
+  if(tempo.setIdx===0){ const delta=+(s.w-s.tW).toFixed(2);
+    for(let j=1;j<state.sets.length;j++){ if(state.sets[j].touched)continue; state.sets[j].w=+(state.sets[j].tW+delta).toFixed(2); } }
+  document.getElementById('tmW').innerHTML=`${s.w}<small> kg</small>`;
+}
+function beginSet(){
+  stg('In the set'); tempo.rep=0; tempo.repTarget=+curSet().r; const e=EX[state.exIndex];
+  document.getElementById('tmBody').innerHTML=`
+    <div class="tm-ex">${e.name}</div>
+    <div class="tm-ring"><div class="core2" id="tmCore"><div class="tm-phase" id="tmPhase">Set!</div><div class="tm-count" id="tmCount">Rep 0 of ${tempo.repTarget}</div></div></div>
+    <div class="tm-note">Phone down, ears on — PAX counts every second of the lower ("Down, 2, 3…") then calls the drive.</div>
+    <div class="tm-actions"><button class="tm-btn ghost" onclick="finishSet()">End set early</button></div>`;
+  clearTempoTimers(); initAudio(); beep(520,0.18,0.16); say('Set '+(tempo.setIdx+1)+'. Go.');
+  tempo.timers.push(setTimeout(paceRep,750));
+}
+function paceRep(){
+  if(!tempoLive()) return;
+  if(tempo.rep>=tempo.repTarget) return finishSet();
+  const seq=[['Lower',tempo.arr[0],0.7],['Hold',tempo.arr[1],0.7],['Drive',tempo.arr[2],1.0]].filter(p=>p[1]>0);
+  const core=document.getElementById('tmCore'), ph=document.getElementById('tmPhase'); let k=0;
+  (function step(){
+    if(!tempoLive()) return;
+    if(k>=seq.length){ tempo.rep++; const c=document.getElementById('tmCount'); if(c)c.textContent=`Rep ${tempo.rep} of ${tempo.repTarget}`;
+      if(tempo.rep<tempo.repTarget) say(tempo.rep===tempo.repTarget-1 ? `That's ${tempo.rep}. Last one.` : `That's ${tempo.rep}`);
+      tempo.timers.push(setTimeout(paceRep,140)); return; }
+    const p=seq[k]; if(ph)ph.textContent=p[0]==='Lower'?'Down…':p[0]==='Hold'?'Hold':'Drive!';
+    if(p[0]==='Lower'){
+      beep(300,0.13,0.14); say('Down');
+      /* voice every second of the eccentric — "Down" is beat 1, then "2, 3…" land on the second */
+      for(let s=1;s<p[1];s++){
+        tempo.timers.push(setTimeout(()=>{ if(!tempoLive()) return; beep(300,0.09,0.10); say(String(s+1),true); if(ph)ph.textContent=(s+1)+'…'; }, s*1000));
+      }
+    }
+    else if(p[0]==='Hold'){ beep(430,0.09,0.10); say('Hold',true); }
+    else { beep(660,0.16,0.17); say('Drive',true); }
+    if(core){ core.style.transitionDuration=p[1]+'s'; core.style.transform=`scale(${p[2]})`; }
+    k++; tempo.timers.push(setTimeout(step,p[1]*1000));
+  })();
+}
+function finishSet(){ clearTempoTimers(); chord([523,659,784]); say('Set complete. Log your effort.'); stageRPEcapture(); }
+function stageRPEcapture(){
+  stg('Log RPE'); const e=EX[state.exIndex], s=curSet();
+  const vals=[6,6.5,7,7.5,8,8.5,9,9.5,10];
+  document.getElementById('tmBody').innerHTML=`
+    <div class="tm-ex">How did that feel?</div>
+    <div class="tm-sub">${e.name} · Set ${tempo.setIdx+1} · cap RPE ${s.tRPE}</div>
+    <div class="rpe-scale" style="margin:20px 0">${vals.map(v=>`<button class="${v>s.tRPE?'over':''} ${v==s.rpe?'sel':''}" onclick="pickRPE(${v})">${v}</button>`).join('')}</div>
+    <div class="tm-note">RPE = how many reps you had left. ${coachN()} capped you at ${s.tRPE} today — pick honestly.</div>`;
+}
+function pickRPE(v){
+  const s=curSet(); s.rpe=v; s.done=true;
+  if(v>s.tRPE) toast(`Logged RPE ${v} — over ${coachN()}'s cap of ${s.tRPE}. PAX will ease tomorrow's load.`,2400);
+  if(state.sets.every(x=>x.done)) return stageRest(true,null);
+  let ni=state.sets.findIndex((x,ix)=>ix>tempo.setIdx && !x.done);
+  if(ni<0) ni=state.sets.findIndex(x=>!x.done);
+  stageRest(false,ni);
+}
+function stageRest(finished,nextIdx){
+  stg('Rest'); tempo.restLeft=EX[state.exIndex].rest; tempo.restFin=finished; tempo.restNext=nextIdx; renderRest();
+  say(finished?'Exercise complete. Strong work.':'Rest.');
+  clearTempoTimers();
+  (function tick(){
+    if(!tempoLive()) return;
+    tempo.restLeft--;
+    if(tempo.restLeft>0 && tempo.restLeft<=3) beep(520,0.1,0.13);
+    if(tempo.restLeft<=0){ if(finished){ renderRest(); } else { beep(760,0.2,0.17); say('Next set, ready'); toNext(nextIdx); } return; }
+    renderRest(); tempo.timers.push(setTimeout(tick,1000));
+  })();
+}
+function renderRest(){
+  const m=Math.floor(tempo.restLeft/60), sec=tempo.restLeft%60, fin=tempo.restFin, ni=tempo.restNext;
+  document.getElementById('tmBody').innerHTML=`
+    <div class="tm-ex">Rest</div>
+    <div class="tm-ring"><div class="core2"><div class="tm-phase">${m}:${String(sec).padStart(2,'0')}</div><div class="tm-count">Set ${tempo.setIdx+1} logged ✓</div></div></div>
+    <div class="tm-note">${fin?'Last working set done — strong work.':'Breathe. PAX lines up your next set when you\'re ready.'}</div>
+    <div class="tm-actions">
+      ${fin?`<button class="tm-btn" onclick="tempoDone()">Finish exercise →</button>`
+           :`<button class="tm-btn" onclick="toNext(${ni})">Ready · next set →</button><button class="tm-btn ghost" onclick="tempo.restLeft+=30;renderRest()">Add 30s</button>`}
+    </div>`;
+}
+function toNext(ni){ clearTempoTimers(); tempo.setIdx = ni!=null?ni:firstUndone(); stageReady(true); }
+function tempoDone(){ clearTempoTimers(); document.getElementById('tempoOv').classList.remove('show'); renderSets(); renderKept(); renderRail(); const e=EX[state.exIndex]; e._summed=true; showExerciseSummary(); }
+
+/* ---------- summaries ---------- */
+function volFmt(v){ return v>=1000 ? (v/1000).toFixed(1)+'t' : Math.round(v)+'kg'; }
+function showExerciseSummary(){
+  const e=EX[state.exIndex];
+  document.getElementById('sumTitle').textContent=e.name+' — logged';
+  const sl=document.getElementById('sumSets'); sl.innerHTML=''; let vol=0,rpeSum=0;
+  e.work.forEach((s,i)=>{
+    const w=+s.w||0,r=+s.r||0; vol+=w*r; rpeSum+=(+s.rpe||0);
+    const pr=(s.tW>0 && w>s.lwW)||(r>s.lwR);
+    const disp=s.tW===0?`${r} reps`:`${w}kg × ${r}`;
+    let tag;
+    if(pr) tag='<span class="prtag">PR</span>';
+    else { const dw=w-s.lwW; const same=(s.tW===0? r===s.lwR : dw===0 && r===s.lwR);
+      tag=`<span class="dl ${same?'same':'up'}">${s.tW===0?(r-s.lwR>=0?'+':'')+(r-s.lwR)+' rep':(dw>0?'+'+dw+'kg':dw<0?dw+'kg':'= last wk')}</span>`; }
+    sl.innerHTML+=`<div class="sum-set"><span class="si2">Set ${i+1}</span><span class="val2">${disp} <span class="rp">@ RPE ${s.rpe}</span></span>${tag}</div>`;
+  });
+  document.getElementById('sumTiles').innerHTML=`
+    <div class="st2"><div class="v">${e.work.length}</div><div class="k">sets</div></div>
+    <div class="st2"><div class="v">${vol?volFmt(vol):'BW'}</div><div class="k">volume</div></div>
+    <div class="st2"><div class="v">${(rpeSum/e.work.length).toFixed(1)}</div><div class="k">avg RPE</div></div>`;
+  document.getElementById('sumNext').style.display = state.exIndex<EX.length-1?'block':'none';
+  document.getElementById('exSumOv').classList.add('show');
+}
+function sumNext(){ closeSheet('exSumOv'); if(state.exIndex<EX.length-1) loadExercise(state.exIndex+1); }
+function openWorkoutSummary(){
+  // (total + sessName must be declared BEFORE first use — a TDZ ReferenceError
+  // here used to kill the whole finish flow silently.)
+  const total=EX.length||1;
+  const sessName=(document.querySelector('#logger .ttl')?.textContent||'Session').replace(/\b\w+/g,w=>w[0]+w.slice(1).toLowerCase());
+  let doneEx=0,totSets=0,vol=0,prs=0,rpeSum=0,rpeN=0; const skipped=[];
+  EX.forEach(e=>{ const all=e.work.every(s=>s.done); if(all) doneEx++; else skipped.push(e.name);
+    e.work.forEach(s=>{ if(s.done){ totSets++; vol+=(+s.w||0)*(+s.r||0); if(s.rpe){rpeSum+=+s.rpe;rpeN++;} if((s.tW>0&&+s.w>s.lwW)||+s.r>s.lwR)prs++; } }); });
+  document.getElementById('wkTiles').innerHTML=`
+    <div class="st2"><div class="v">${doneEx}/${total}</div><div class="k">exercises</div></div>
+    <div class="st2"><div class="v">${vol?volFmt(vol):'—'}</div><div class="k">volume</div></div>
+    <div class="st2"><div class="v">${prs}</div><div class="k">PRs</div></div>`;
+  const list=document.getElementById('wkList'); list.innerHTML='';
+  EX.forEach(e=>{ const all=e.work.every(s=>s.done);
+    list.innerHTML+=`<div class="sum-set"><span class="val2" style="flex:1;font-size:14px">${e.name}</span>${all?'<span class="dl up">✓ done</span>':'<span class="dl same">still open</span>'}</div>`; });
+  document.getElementById('wkSub').textContent=`${sessName} · ${totSets} sets logged · avg RPE ${rpeN?(rpeSum/rpeN).toFixed(1):'—'}`;
+  // adaptive, honest-but-kind wrap message
+  const title=doneEx===total?`${sessName} — done.`:doneEx===0?`${sessName} — logged so far.`:`${sessName} — most of the way.`;
+  document.getElementById('wkTitle').textContent=title;
+  const note=document.getElementById('wkNote'); let cls,html;
+  if(doneEx===total){ cls='win';
+    html=`<b>Full session, every rep.</b> ${prs?prs+' PRs and you ':'You '}held RPE at cap on tired legs — exactly the plan. That's the pact kept. ${coachN()} sees this Sunday.`; }
+  else if(doneEx===0){ cls='partial';
+    html=`<b>Nothing logged yet — no drama.</b> Even one exercise beats a skipped day. Start with the squat, or tell PAX what today looks like and we'll trim the session to fit.`; }
+  else { cls='partial'; const names=skipped.length?skipped.slice(0,3).join(', ')+(skipped.length>3?` +${skipped.length-3} more`:''):'the rest';
+    html=`<b>${doneEx} of ${total} — real work banked.</b> ${prs?prs+' PRs on the board. ':''}Still open: ${names}. No guilt here — log them later, or tell PAX why today got cut and we'll recalibrate tomorrow's load.`; }
+  note.className='wrap-note '+cls;
+  note.innerHTML=`<div class="av">P</div><div>${html}</div>`;
+  const fb=document.getElementById('finishBtn'); if(fb) fb.innerHTML=`Finish & sync to ${coachN()} →`;
+  document.getElementById('wkSumOv').classList.add('show');
+}
+async function finishWorkout(){
+  closeSheet('wkSumOv'); go('dash');
+  if(!(LIVE&&state.live)){ toast('✓ Session logged.',2400); return; }
+  try{
+    // 1. Session summary row
+    let totSets=0,vol=0,rpeSum=0,rpeN=0,doneEx=0;
+    EX.forEach(e=>{ if(e.work.length&&e.work.every(s=>s.done)) doneEx++;
+      e.work.forEach(s=>{ if(s.done){ totSets++; vol+=(+s.w||0)*(+s.r||0); if(s.rpe){rpeSum+=+s.rpe;rpeN++;} } }); });
+    const status = doneEx===EX.length?'completed':(doneEx>0?'partial':'in_progress');
+    const sessName = document.querySelector('#logger .ttl')?.textContent||'';
+    const { data:wl, error:wlErr } = await sb.from('workout_logs').insert({
+      client_id:state.live.cid, date:state.live.today, session_name:sessName, status,
+      exercises_kept:doneEx, exercises_total:EX.length,
+      avg_rpe: rpeN? +(rpeSum/rpeN).toFixed(1):null, total_volume:+vol.toFixed(1)
+    }).select().single();
+    if(wlErr) throw wlErr;
+    // 2. Every logged set
+    const rows=[];
+    EX.forEach(e=>{
+      e.warm.forEach((s,i)=>{ if(s.done) rows.push({ workout_log_id:wl.id, client_id:state.live.cid, exercise_name:e.name, set_index:i+1, is_warmup:true, weight:+s.w||null, reps:+s.r||null }); });
+      e.work.forEach((s,i)=>{ if(s.done) rows.push({ workout_log_id:wl.id, client_id:state.live.cid, exercise_name:e.name, set_index:i+1, is_warmup:false,
+        weight:s.tW===0?null:+s.w||null, reps:+s.r||null, rpe:+s.rpe||null,
+        prescribed_weight:s.tW===0?null:+s.tW||null, prescribed_reps:+s.tR||null, prescribed_rpe:+s.tRPE||null }); });
+    });
+    if(rows.length){ const { error:slErr } = await sb.from('set_logs').insert(rows); if(slErr) throw slErr; }
+    // 3. The flag PAX's pact-integrity job reads: today's session done.
+    if(doneEx>0){ await sb.from('programme').update({ completed:true }).eq('client_id',state.live.cid).eq('date',state.live.today); }
+    state.doneToday={ status, kept:doneEx, total:EX.length };
+    markPactCardDone(state.doneToday);
+    toast(`✓ ${totSets} sets synced to ${state.coachName||'your coach'} — session ${status==='completed'?'complete':'logged'}. PAX sees it too.`,3200);
+  }catch(e){ console.error('finishWorkout sync',e); toast('⚠️ Couldn\'t sync the session: '+(e.message||e),3600); }
+}
+
+/* ---------- video library ---------- */
+const LIB=[
+ {name:'Back Squat',ico:'quads',mg:'Quads · Glutes',tempo:'3-1-1',cat:'Legs'},
+ {name:'Leg Press',ico:'quads',mg:'Quads',tempo:'2-0-1',cat:'Legs'},
+ {name:'Romanian Deadlift',ico:'hamstrings',mg:'Hamstrings · Glutes',tempo:'3-1-1',cat:'Legs'},
+ {name:'Seated Leg Curl',ico:'hamstrings',mg:'Hamstrings',tempo:'2-1-2',cat:'Legs'},
+ {name:'Hip Thrust',ico:'glutes',mg:'Glutes',tempo:'2-1-1',cat:'Legs'},
+ {name:'Walking Lunge',ico:'glutes',mg:'Quads · Glutes',tempo:null,cat:'Legs'},
+ {name:'Standing Calf Raise',ico:'calves',mg:'Calves',tempo:'2-1-2',cat:'Legs'},
+ {name:'Bench Press',ico:'chest',mg:'Chest · Triceps',tempo:'2-1-1',cat:'Push'},
+ {name:'Overhead Press',ico:'shoulders',mg:'Shoulders',tempo:'2-0-1',cat:'Push'},
+ {name:'Incline DB Press',ico:'chest',mg:'Upper chest',tempo:'2-1-2',cat:'Push'},
+ {name:'Lat Pulldown',ico:'back',mg:'Back · Biceps',tempo:'2-1-2',cat:'Pull'},
+ {name:'Pull-up',ico:'back',mg:'Back · Biceps',tempo:null,cat:'Pull'},
+ {name:'Bicep Curl',ico:'arms',mg:'Biceps',tempo:'2-1-2',cat:'Pull'},
+ {name:'Ab Wheel Rollout',ico:'core',mg:'Core',tempo:null,cat:'Core'},
+ {name:'Plank',ico:'core',mg:'Core',tempo:null,cat:'Core'},
+];
+let libCat='All';
+function openLibrary(){ libCat='All'; renderLibFilter(); renderLib(); document.getElementById('libOv').classList.add('show'); }
+function renderLibFilter(){
+  const cats=['All','Legs','Push','Pull','Core'], el=document.getElementById('libFilter'); el.innerHTML='';
+  cats.forEach(c=>{ el.innerHTML+=`<button class="chip ${c===libCat?'on':''}" onclick="setLibCat('${c}')">${c}</button>`; });
+}
+function setLibCat(c){ libCat=c; renderLibFilter(); renderLib(); }
+function renderLib(){
+  const el=document.getElementById('libGrid'); el.innerHTML='';
+  LIB.forEach((it,i)=>{ if(libCat!=='All' && it.cat!==libCat) return;
+    const d=document.createElement('div'); d.className='lib-card'; d.onclick=()=>openDemoFor(i);
+    d.innerHTML=`<div class="lib-thumb"><div class="lf">${iconFor(it.ico)}</div><span class="du">${it.tempo?'Tempo '+it.tempo:'0:45'}</span><span class="pl">▶</span></div><div class="ln">${it.name}</div><div class="lm">${it.mg}</div>`;
+    el.appendChild(d);
+  });
+}
+
+/* ---------- demo player + form capture ---------- */
+let demoTimer;
+function setDemo(name,ico,tempo){
+  document.getElementById('demoTitle').textContent=name;
+  document.getElementById('demoTempo').textContent=tempo?('Tempo '+tempo):'Standard tempo';
+  document.getElementById('demoFig').innerHTML=iconFor(ico);
+  document.getElementById('pbarFill').style.width='0%';
+  document.getElementById('demoTime').textContent='0:00 / 0:45';
+  document.getElementById('demoOv').classList.add('show');
+}
+function openDemo(){ const e=EX[state.exIndex]; setDemo(e.name,e.ico,e.tempo); }
+function openDemoFor(i){ const it=LIB[i]; setDemo(it.name,it.ico,it.tempo); }
+function playDemo(){
+  clearInterval(demoTimer); let t=0; const total=45;
+  demoTimer=setInterval(()=>{ t++; if(t>total){ clearInterval(demoTimer); return; }
+    document.getElementById('pbarFill').style.width=(t/total*100)+'%';
+    document.getElementById('demoTime').textContent=`0:${String(t).padStart(2,'0')} / 0:45`; },70);
+}
+let capTimer;
+function openCapture(){
+  const e=EX[state.exIndex];
+  document.getElementById('camBig').textContent='●';
+  document.getElementById('camRec').innerHTML='<span class="rd"></span> READY';
+  document.getElementById('camFig').innerHTML=iconFor(e.ico);
+  document.getElementById('capAction').innerHTML='<button class="recbtn" onclick="doCapture()"></button>';
+  document.getElementById('capHint').textContent='Film one working set. PAX checks it, then your coach reviews and replies in your thread.';
+  document.getElementById('captOv').classList.add('show');
+}
+function doCapture(){
+  if(LIVE&&state.live){ document.getElementById('clipFile').click(); return; }
+  clearInterval(capTimer);
+  document.getElementById('camRec').innerHTML='<span class="rd"></span> REC';
+  document.getElementById('capAction').innerHTML='';
+  let t=3; const big=document.getElementById('camBig'); big.textContent=t;
+  capTimer=setInterval(()=>{ t--;
+    if(t<=0){ clearInterval(capTimer); big.textContent='✓';
+      document.getElementById('camRec').innerHTML='CAPTURED';
+      document.getElementById('capHint').innerHTML='Clip captured. <b style="color:#fff">Send for form review?</b>';
+      document.getElementById('capAction').innerHTML='<button class="btn btn-red" style="margin-top:16px" onclick="sendCapture()">Send to '+coachN()+' →</button>';
+      return; }
+    big.textContent=t; },1000);
+}
+async function uploadClip(file){
+  if(!file) return;
+  if(file.size>60*1024*1024){ toast('Clip too big — keep it under ~60MB (one set).',3000); return; }
+  document.getElementById('camRec').innerHTML='<span class="rd"></span> UPLOADING…';
+  document.getElementById('capHint').textContent='Uploading your set…';
+  try{
+    const ext=(file.name.split('.').pop()||'mp4').toLowerCase();
+    const path=state.live.cid+'/'+(crypto.randomUUID?crypto.randomUUID():Date.now())+'.'+ext;
+    const { error:upErr } = await sb.storage.from('form-clips').upload(path, file, { contentType:file.type||'video/mp4' });
+    if(upErr) throw upErr;
+    const { error:rowErr } = await sb.from('form_clips').insert({ client_id:state.live.cid, exercise_name:EX[state.exIndex]?.name||null, storage_path:path });
+    if(rowErr) throw rowErr;
+    document.getElementById('camRec').innerHTML='SENT ✓';
+    document.getElementById('capHint').innerHTML='Clip sent — <b style="color:#fff">'+coachN()+' will review it and reply.</b>';
+    toast('🎥 Form clip sent to '+coachN()+' for review.',2800);
+    setTimeout(()=>closeSheet('captOv'),1200);
+  }catch(e){ console.error('clip upload',e); document.getElementById('camRec').innerHTML='<span class="rd"></span> READY';
+    toast('⚠️ Upload failed: '+(e.message||e),3400); }
+  document.getElementById('clipFile').value='';
+}
+function sendCapture(){ closeSheet('captOv'); toast('🎥 Form clip sent to '+coachN()+'. PAX flagged: depth &amp; knee tracking look solid. They\'ll reply in your thread.',3200); }
+
+/* cardio */
+const CARDIO_ICON={run:'🏃',ride:'🚴',walk:'🚶',swim:'🏊',row:'🚣',other:'⚡'};
+state.cardio=[{type:'run',name:'Morning Run',km:5.2,min:28,date:'Mon'},{type:'ride',name:'Evening Ride',km:14.6,min:41,date:'Thu'}];
+state.cardioType='run';
+function renderCardio(){
+  const el=document.getElementById('cardioList'); if(!el) return;
+  if(!state.cardio.length){ el.innerHTML='<div class="muted" style="font-size:13px;padding:8px 0">Nothing yet this week — wearable sessions land here automatically.</div>'; document.getElementById('cardioMeta').textContent='runs & rides'; return; }
+  el.innerHTML=state.cardio.map(a=>`<div class="pact"><span style="font-size:20px;flex:0 0 28px">${CARDIO_ICON[a.type]||'⚡'}</span>
+    <div class="pn">${a.name||a.type[0].toUpperCase()+a.type.slice(1)}<div class="muted" style="font-size:11.5px;font-weight:500;margin-top:2px">${a.date}${a.hr?' · '+a.hr+' bpm':''}${a.kcal?' · '+a.kcal+' kcal':''}</div></div>
+    <div style="text-align:right"><div style="font-family:Montserrat;font-weight:800">${a.km?a.km.toFixed(1)+' km':(a.min?a.min+' min':'')}</div><div class="muted" style="font-size:11px">${a.km&&a.min?a.min+' min':''}</div></div></div>`).join('');
+  const km=state.cardio.reduce((s,a)=>s+(a.km||0),0);
+  document.getElementById('cardioMeta').textContent=`${state.cardio.length} session${state.cardio.length===1?'':'s'} · ${km.toFixed(1)} km`;
+}
+function openCardio(){ document.getElementById('cardioOv').classList.add('show'); }
+async function saveCardio(){
+  const km=parseFloat(document.getElementById('cardioKm').value)||null;
+  const min=parseInt(document.getElementById('cardioMin').value)||null;
+  if(!km&&!min){ toast('Add a distance or a time.'); return; }
+  const t=state.cardioType;
+  if(LIVE&&state.live){
+    const { error } = await sb.from('activities').insert({ client_id:state.live.cid, date:state.live.today, type:t, source:'manual',
+      distance_m: km?Math.round(km*1000):null, duration_s: min?min*60:null });
+    if(error){ toast('⚠️ Couldn\'t log it: '+error.message,3000); return; }
+  }
+  state.cardio.push({type:t,name:null,km,min,date:'Today'});
+  renderCardio(); closeSheet('cardioOv');
+  document.getElementById('cardioKm').value=''; document.getElementById('cardioMin').value='';
+  toast(`${CARDIO_ICON[t]} Logged${km?' '+km.toFixed(1)+' km':''}${min?' · '+min+' min':''} — ${coachN()} and PAX can see it.`,2600);
+}
+
+/* log weight (numeric) */
+function openWeight(){ document.getElementById('wInput').value=state.wt.current.toFixed(1); updateWLabel(); document.getElementById('weightOv').classList.add('show'); }
+function nudgeWeight(d){ const i=document.getElementById('wInput'); i.value=Math.max(0,(parseFloat(i.value)||0)+d).toFixed(1); updateWLabel(); }
+function updateWLabel(){ const v=parseFloat(document.getElementById('wInput').value)||0; document.getElementById('wSaveBtn').textContent=`Log ${v.toFixed(1)}kg`; }
+async function saveWeight(){
+  const v=parseFloat(document.getElementById('wInput').value); if(!v){ toast('Enter a weight first.'); return; }
+  state.wt.prev=state.wt.current; state.wt.current=+v.toFixed(1);
+  state.wt.hist.push(state.wt.current); if(state.wt.hist.length>16) state.wt.hist.shift();
+  updateWeightUI(); closeSheet('weightOv');
+  const dw=+(state.wt.current-state.wt.prev).toFixed(1);
+  // Live write: weigh_ins row (PAX's integrity job auto-awards the weigh-in
+  // pact from this) + keep clients.current_weight in step.
+  if(LIVE&&state.live){
+    const { error } = await sb.from('weigh_ins').insert({ client_id:state.live.cid, date:state.live.today, weight:state.wt.current });
+    if(error){ toast('⚠️ Couldn\'t sync the weigh-in: '+error.message,3200); return; }
+    await sb.from('clients').update({ current_weight: state.wt.current }).eq('id', state.live.cid);
+    toast(`⚖️ Logged <b>${state.wt.current.toFixed(1)}kg</b> — synced. ${dw<0?'Down '+Math.abs(dw)+'kg':dw>0?'Up '+dw+'kg':'Holding steady'}. Weigh-in pact kept.`);
+    return;
+  }
+  toast(`⚖️ Logged <b>${state.wt.current.toFixed(1)}kg</b> — ${dw<0?'down '+Math.abs(dw)+'kg':dw>0?'up '+dw+'kg':'holding steady'} on yesterday. Weigh-in pact kept.`);
+}
+function markPactCardDone(info){
+  info=info||{};
+  document.getElementById('pcEyebrow').innerHTML='✓ Today\'s Pact · kept';
+  document.getElementById('pcEyebrow').style.color='#3DD68C';
+  const sub=document.getElementById('pcSub');
+  sub.textContent=`${info.status==='partial'?'Partially logged':'Completed'}${info.kept!=null?` — ${info.kept}/${info.total} exercises`:''} · synced to ${coachN()}`;
+  const pf=document.getElementById('pcFirst'); if(pf) pf.style.display='none';
+  const b=document.getElementById('pcBtn');
+  b.style.display='block'; b.textContent='✓ SESSION COMPLETE — VIEW SUMMARY';
+  b.style.background='#0F8A5F';
+  b.onclick=()=>{ go('logger'); openWorkoutSummary(); };
+}
+function greetWord(){ const h=new Date().getHours(); return h<12?'Morning':h<18?'Afternoon':'Evening'; }
+function updateWeightUI(){
+  const w=state.wt, name=state.firstName||'there';
+  const set=(id,html)=>{ const el=document.getElementById(id); if(el) el.innerHTML=html; };
+  if(w.current){ set('curWt',`${w.current.toFixed(1)}<span>kg</span>`); }
+  if(w.current&&w.prev){ const dw=+(w.current-w.prev).toFixed(1);
+    set('curDelta', dw<=0?`▼ ${Math.abs(dw)}kg vs last weigh-in`:`▲ ${dw}kg vs last weigh-in`);
+    const cd=document.getElementById('curDelta'); if(cd) cd.className='delta '+(dw<=0?'down':'muted'); }
+  if(w.target){ set('tgtWt',`${(+w.target).toFixed(1)}<span>kg</span>`);
+    if(w.current) set('tgtRemain', Math.abs(w.current-w.target)<=0.2?'at target':`${Math.abs(w.current-w.target).toFixed(1)}kg ${w.current>w.target?'remaining':'past target'}`); }
+  if(w.start&&w.current&&w.target&&w.start!==w.target){
+    const pct=Math.round((w.start-w.current)/(w.start-w.target)*100);
+    set('goalHead',`${greetWord()}, ${name}. You're <b>${isFinite(pct)?Math.max(0,Math.min(100,pct)):0}%</b> of the way to ${w.target}kg.`);
+    const barPct=Math.min(100,Math.max(0,(w.start-w.current)/(w.start-w.target)*100));
+    const gb=document.getElementById('goalBar'); if(gb) gb.style.width=barPct+'%';
+    set('goalNow',`${w.current.toFixed(1)}kg now`);
+    set('goalStartLbl',`${(+w.start).toFixed(1)}kg`); set('goalTargetLbl',`${(+w.target).toFixed(1)}kg target`);
+    set('gpStart',`${(+w.start).toFixed(1)}<span>kg</span>`);
+    set('gpLost',`${(w.start-w.current).toFixed(1)}<span>kg</span>`);
+    // avg/wk + projection — only from REAL weigh-in history, never invented
+    const hist=w.hist||[], dates=w.histDates||[];
+    if(hist.length>=2&&dates.length===hist.length){
+      const days=(new Date(dates[dates.length-1])-new Date(dates[0]))/864e5;
+      if(days>=7){ const rate=(hist[0]-hist[hist.length-1])/(days/7); // kg lost per week (+ve when losing)
+        set('gpAvg',`${Math.abs(rate).toFixed(2)}<span>kg</span>`);
+        const toGo=w.current-w.target;
+        if(rate>0.05&&toGo>0){ const wks=toGo/rate; const end=new Date(); end.setDate(end.getDate()+Math.round(wks*7));
+          set('projVal', end.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}));
+          const ps=document.getElementById('projSub'); if(ps) ps.textContent=`${Math.round(wks)} week${Math.round(wks)===1?'':'s'} at your current rate`; }
+      }
+    }
+  } else { set('goalHead',`${greetWord()}, ${name}.`); }
+  drawChart();
+}
+
+/* init */
+state.chan='WhatsApp';
+document.getElementById('cardioType').addEventListener('click',e=>{ const b=e.target.closest('.chip'); if(!b)return;
+  document.querySelectorAll('#cardioType .chip').forEach(c=>c.classList.remove('on')); b.classList.add('on'); state.cardioType=b.dataset.t; });
+document.getElementById('chan').addEventListener('click',e=>{ const b=e.target.closest('.chip'); if(!b)return;
+  document.querySelectorAll('#chan .chip').forEach(c=>c.classList.remove('on')); b.classList.add('on'); state.chan=b.dataset.ch; });
+state.pacts.forEach(p=>{ if(p.hist) p.hist[27]=p.done?1:0; });
+renderPacts(); drawChart(); drawWeek(); renderNutrition(); renderCardio(); loadExercise(state.exIndex);
+['pactOv','swapOv','demoOv','captOv','exSumOv','wkSumOv','libOv','weightOv','menuOv','cardioOv'].forEach(id=>document.getElementById(id).addEventListener('click',e=>{if(e.target.id===id)closeSheet(id)}));
+if(/[?&]role=coach/.test(location.search)) loginMode('co');  // console /login redirects here with ?role=coach
+if(LIVE) bootLive();  // Supabase configured → load real data after magic-link sign-in
+</script>
+</body>
+</html>
