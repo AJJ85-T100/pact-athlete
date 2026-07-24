@@ -1297,7 +1297,10 @@ async function onSignedIn(){
        if(/[?&]begin=1/.test(location.search)) beginWorkout();     // morning-brief deep link → straight into the logger
        // Back from the Terra Connect widget (TERRA_SUCCESS/FAILURE_URL)
        if(/[?&]device=connected/.test(location.search)){ openSettings(); toast('✓ Device connected — your data starts flowing in the next few minutes.',3600); }
-       else if(/[?&]device=failed/.test(location.search)){ openSettings(); toast('That connection didn\'t complete — give it another go.',3200); } }
+       else if(/[?&]device=failed/.test(location.search)){ openSettings(); toast('That connection didn\'t complete — give it another go.',3200); }
+       // Back from the Google Calendar OAuth (bot /auth/google/callback)
+       if(/[?&]calendar=connected/.test(location.search)){ openSettings(); toast('✓ Calendar connected — PAX now sees your week and plans around it.',3600); }
+       else if(/[?&]calendar=(declined|retry)/.test(location.search)){ openSettings(); toast('That calendar connection didn\'t complete — give it another go when you\'re ready.',3200); } }
   catch(e){ console.error('loadLive',e); toast('Signed in, but your data didn\'t load — pull to refresh, or ask your coach to check your setup.',3600); }
 }
 async function loadLive(){
@@ -1583,7 +1586,7 @@ function barSVG(data,opts){
 }
 
 /* ---------- settings ---------- */
-function openSettings(){ renderSettings(); go('settings'); }
+function openSettings(){ renderSettings(); go('settings'); loadCalendarStatus(); }
 function deviceMeta(p){
   const M={GARMIN:['⌚','Garmin'],OURA:['◍','Oura'],WHOOP:['➰','Whoop'],FITBIT:['⬤','Fitbit'],
     POLAR:['❄️','Polar'],SUUNTO:['🧭','Suunto'],COROS:['🟠','COROS'],WITHINGS:['⚖️','Withings'],
@@ -1608,6 +1611,34 @@ async function connectDevice(){
     if(!r.ok||!j.url){ toast(j.error||'Couldn\'t get a connect link — try again in a minute.',3200); return; }
     location.href=j.url;   // Terra widget → redirects back with ?device=connected
   }catch(e){ console.error('connectDevice',e); toast('Couldn\'t reach the connection service — check your signal and retry.',3200); }
+}
+/* ---------- Google Calendar (PAX reads your week — travel, busy days,
+   social plans — so it plans around your life instead of reacting to it.
+   Read-only; the bot at BOT_URL brokers the OAuth and stores tokens.) */
+async function loadCalendarStatus(){
+  if(!LIVE||!BOT_URL||!state.live?.cid) return;
+  try{
+    const r=await fetch(BOT_URL+'/calendar/status?role=client&id='+state.live.cid);
+    const j=await r.json().catch(()=>({}));
+    state.calendar={ configured:!!j.configured, connected:!!j.connected, email:j.email||null };
+    renderSettings();
+  }catch(e){ /* leave whatever we had */ }
+}
+function connectCalendar(){
+  if(!LIVE){ toast('Demo mode — sign in to connect your calendar.'); return; }
+  if(!BOT_URL||!state.calendar?.configured){ toast('Calendar connections aren\'t switched on yet — ask your coach.',2600); return; }
+  toast('Off to Google — approve read-only access and you\'ll come straight back.',2400);
+  location.href=BOT_URL+'/auth/google/start?role=client&id='+state.live.cid+'&return='+encodeURIComponent(location.origin+location.pathname);
+}
+async function disconnectCalendar(){
+  if(!BOT_URL||!state.live?.cid) return;
+  try{
+    const r=await fetch(BOT_URL+'/calendar/disconnect',{ method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({ role:'client', id:state.live.cid }) });
+    if(r.ok){ state.calendar={ ...(state.calendar||{}), connected:false, email:null }; renderSettings(); toast('Calendar disconnected — PAX is back to only what you tell it.',2600); }
+    else toast('Couldn\'t disconnect just now — try again.',2600);
+  }catch(e){ toast('Couldn\'t disconnect just now — try again.',2600); }
 }
 async function disconnectDevice(tuid,label){
   if(!BOT_URL){ toast('Ask your coach to disconnect this one.'); return; }
@@ -1637,9 +1668,16 @@ function renderSettings(){
       : `<button class="cbtn" style="background:#EEF2F6;border-color:#EEF2F6;color:var(--muted)" onclick="disconnectDevice('${d.terra_user_id}','${label.replace(/'/g,'')}')">Disconnect</button>`;
     return `<div class="set-row ${d.status!=='revoked'?'on':''}"><div class="si">${ico}</div><div class="sc"><div class="sn">${label}</div><div class="sm">${sub}</div></div>${btn}</div>`;
   }).join('');
+  const cal=state.calendar||{};
+  const calRow= cal.connected
+    ? `<div class="set-row on"><div class="si">▦</div><div class="sc"><div class="sn">Google Calendar</div><div class="sm">Connected${cal.email?' · '+cal.email:''} · PAX plans around your week</div></div>
+       <button class="cbtn" style="background:#EEF2F6;border-color:#EEF2F6;color:var(--muted)" onclick="disconnectCalendar()">Disconnect</button></div>`
+    : `<div class="set-row"><div class="si">▦</div><div class="sc"><div class="sn">Google Calendar</div><div class="sm">Read-only — PAX sees travel &amp; busy days before they hit, never the details</div></div>
+       <button class="cbtn" onclick="connectCalendar()">Connect</button></div>`;
   const apps=`
     <div class="set-row on"><div class="si">♥</div><div class="sc"><div class="sn">Apple Health</div><div class="sm">Nutrition &amp; daily stats via Health Auto Export</div></div></div>
     ${devRows}
+    ${calRow}
     <div class="set-row"><div class="si">⌚</div><div class="sc"><div class="sn">${devs.length?'Add another device':'Connect your device'}</div><div class="sm">Garmin, Oura, Whoop, Fitbit, Polar &amp; more — activity syncs itself</div></div>
     <button class="cbtn" onclick="connectDevice()">Connect</button></div>`;
   const shared=state.pacts.filter(p=>p.share).length;
