@@ -826,11 +826,10 @@
       <div class="field"><label>Ping them via</label>
         <div class="chan" id="chan">
           <button class="chip on" data-ch="WhatsApp">WhatsApp</button>
-          <button class="chip" data-ch="SMS">SMS</button>
           <button class="chip" data-ch="Email">Email</button>
         </div>
       </div>
-      <div class="info">🔔 <b id="witName">They'll</b> get a first ping now and a <b>real-time alert</b> each time you keep or break this pact — nothing else about your data. Revoke anytime.</div>
+      <div class="info">🔔 <b id="witName">They'll</b> get a first ping from you now. After that it's automatic: a <b>morning-after alert</b> if you break this pact, and a shout when you hit <b>streak milestones</b> or bounce back after a slip. Other keeps are yours to share. Nothing else about your data — revoke anytime.</div>
     </div>
     <div class="row" style="margin-top:20px;gap:10px">
       <button class="btn btn-ghost" onclick="closeSheet('pactOv')" style="flex:0 0 34%">Cancel</button>
@@ -1106,9 +1105,9 @@ function renderPactDetail(){
   let heat=''; p.hist.forEach(v=>heat+=`<i class="${v===1?'hit':v===0?'miss':''}"></i>`);
   const wit = p.share
     ? `<div class="fld-l">Accountability witness</div>
-       <div class="witcard"><div class="wa">${p.witness[0].toUpperCase()}</div><div style="flex:1"><div class="wn">${p.witness}</div><div class="wm">Via ${p.channel||'WhatsApp'}${p.contact?' · '+p.contact:''} · alerted on every keep &amp; break</div></div><button class="cbtn" onclick="pingWitness()">Ping</button></div>`
+       <div class="witcard"><div class="wa">${p.witness[0].toUpperCase()}</div><div style="flex:1"><div class="wn">${p.witness}</div><div class="wm">Via ${p.channel||'WhatsApp'}${p.contact?' · '+p.contact:''} · alerted on breaks &amp; streak milestones · keeps are yours to share</div></div><button class="cbtn" onclick="pingWitness()">Ping</button></div>`
     : `<div class="fld-l">Accountability</div>
-       <div class="witcard"><div class="wa" style="background:#F1F5F9;color:var(--muted)">＋</div><div style="flex:1"><div class="wn">Not shared yet</div><div class="wm">Add someone to keep you honest — a ping on every keep or break.</div></div><button class="cbtn" onclick="shareFromDetail()">Share</button></div>`;
+       <div class="witcard"><div class="wa" style="background:#F1F5F9;color:var(--muted)">＋</div><div style="flex:1"><div class="wn">Not shared yet</div><div class="wm">Add someone to keep you honest — they hear about breaks and streak milestones automatically.</div></div><button class="cbtn" onclick="shareFromDetail()">Share</button></div>`;
   document.getElementById('pdBody').innerHTML=`
     <div class="pd-hero">
       <div class="eyebrow" style="color:#FF7A6B">${p.coach?'● Set by '+coachN():'● Your pact — you own this'}</div>
