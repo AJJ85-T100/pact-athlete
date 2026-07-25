@@ -840,6 +840,13 @@
         </div>
       </div>
       <div class="info">🔔 <b id="witName">They</b> will get a first ping from you now. After that it's automatic: a <b>morning-after alert</b> if you break this pact, and a shout when you hit <b>streak milestones</b> or bounce back after a slip. Other keeps are yours to share. Nothing else about your data — revoke anytime.</div>
+      <!-- Your witness never signed up for PACT. Asking you to confirm you
+           have their permission is the only consent step that exists before
+           we message a stranger about someone else's health commitments. -->
+      <label class="info" style="display:flex;gap:10px;align-items:flex-start;cursor:pointer">
+        <input type="checkbox" id="witConsent" style="margin-top:3px;flex-shrink:0">
+        <span>I've asked <b id="witName2">them</b> and they're happy to be my witness. They can stop the messages any time by replying STOP, or with the unsubscribe link if it's email.</span>
+      </label>
     </div>
     <div class="row" style="margin-top:20px;gap:10px">
       <button class="btn btn-ghost" onclick="closeSheet('pactOv')" style="flex:0 0 34%">Cancel</button>
@@ -1862,7 +1869,7 @@ document.getElementById('cadence').addEventListener('click',e=>{
   b.classList.add('on'); state.cadence=b.dataset.c;
 });
 document.getElementById('witness').addEventListener('input',e=>{
-  const v=e.target.value.trim(); document.getElementById('witName').textContent=v?v:'They';
+  const v=e.target.value.trim(); document.getElementById('witName2')&&(document.getElementById('witName2').textContent=document.getElementById('witness').value.trim().split(' ')[0]||'them'),document.getElementById('witName').textContent=v?v:'They';
 });
 async function savePact(){
   const t=document.getElementById('pTitle').value.trim(); if(!t){toast('Give your pact a name first.');return;}
@@ -1872,6 +1879,9 @@ async function savePact(){
   const w=(document.getElementById('witness').value.trim()||'Partner').split(' ')[0];
   const contact=document.getElementById('witContact').value.trim();
   if(share && !contact){ toast('Add their mobile or email so PAX can ping them.'); return; }
+  // Consent gate: we're about to message someone who never signed up.
+  if(share && !document.getElementById('witConsent')?.checked){
+    toast('Tick the box to confirm you\'ve asked them first — we message real people here.',3200); return; }
   // Live write: the athlete's own pact — created_by='athlete' is what tells
   // PAX to treat it as their promise, not a coach instruction.
   if(LIVE&&state.live){
@@ -1886,7 +1896,7 @@ async function savePact(){
   if(share){ sendWitnessPing(state.chan, contact, `Hey ${w} — I've just made a pact on PACT.Health: "${t}" (${state.cadence.toLowerCase()}). You're my witness. I'll check in when I keep it — and own it when I don't. Hold me to it 🤝`); }
   state.pacts.push({n:t,pid:(typeof newPid!=='undefined'?newPid:null),done:false,coach:false,why:why,streak:0,best:0,share:share,witness:share?w:null,contact:share?contact:null,channel:share?state.chan:null,cad:state.cadence,hist:Array(28).fill(null)});
   renderPacts(); closeSheet('pactOv');
-  document.getElementById('pTitle').value=''; const pw=document.getElementById('pWhy'); if(pw) pw.value=''; document.getElementById('witContact').value=''; document.getElementById('shareTog').checked=false; toggleShare();
+  document.getElementById('pTitle').value=''; const pw=document.getElementById('pWhy'); if(pw) pw.value=''; document.getElementById('witContact').value=''; document.getElementById('shareTog').checked=false; const wc=document.getElementById('witConsent'); if(wc) wc.checked=false; toggleShare();
   if(share) toast(`Pact created${LIVE?' & saved':''} — pinged <b>${w}</b> via ${state.chan} (${contact}).`,3400);
   else toast(`Pact created${LIVE&&state.live?' — saved. PAX knows it\'s yours.':'. It\'s yours.'}`,2600);
 }

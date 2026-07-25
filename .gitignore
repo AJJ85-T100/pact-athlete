@@ -1,1 +1,7 @@
 .vercel
+
+# Editor/OS/backup litter (security review housekeeping, 24 Jul)
+*.bak
+_to_delete_*
+.DS_Store
+**/.DS_Store
