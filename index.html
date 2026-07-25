@@ -8,7 +8,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Pinned + SRI (review M6). Was @2, a floating major with no integrity
+     attribute: a bad upstream release or a compromised CDN would have run
+     with full access to every athlete's session and health data. Update
+     deliberately: bump the version AND regenerate the hash with
+       curl -s <url> | openssl dgst -sha384 -binary | openssl base64 -A -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.8/dist/umd/supabase.js"
+        integrity="sha384-M65KxMm/JqBppck6onbmAgPVMBHrmPCf1L17Q+71EcvI9/VVI8j5cqoxQf6lj6h2"
+        crossorigin="anonymous"></script>
 <style>
   :root{
     --red:#D92D20; --red-dark:#B42318;
@@ -1006,6 +1013,21 @@ function beginWorkout(){
 
 /* ---------- toast ---------- */
 let toastT;
+/* ── esc(): HTML-escape anything that came from the database ──────────
+   Pact names, "why" lines, witness names, exercise names and the coach's
+   display name are all authored by someone else — the coach, or the
+   athlete themselves — and several of them landed in innerHTML raw. Coach
+   accounts are self-serve, React escapes the value in the console so the
+   coach sees nothing odd, and this page keeps its Supabase session in
+   localStorage with no CSP: a pact named
+     Train 4x <img src=x onerror=...>
+   was a session-stealing payload aimed at every athlete on that coach's
+   roster. Escape at the sink; there is no safe unescaped path here. */
+function esc(v){
+  return String(v==null?'':v).replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
 function toast(html,ms=2600){
   const t=document.getElementById('toast'); t.innerHTML=html; t.classList.add('show');
   clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),ms);
@@ -1029,15 +1051,15 @@ function renderPacts(){
     if(streak>0) bits.push(`<span class="fire">🔥 ${streak}-day streak</span>`);
     const logged=p.hist.filter(v=>v!==null&&v!==undefined).length;
     if(logged>=3) bits.push(`${rate}% last 28d`);
-    if(p.why) bits.push(`“${p.why}”`);
+    if(p.why) bits.push(`“${esc(p.why)}”`);
     else if(!bits.length) bits.push(p.coach?'set by your coach':'your promise — tap to track it');
     row.innerHTML=`<div class="pcheck ${p.done?'done':''}" onclick="event.stopPropagation();togglePact(${i})">${p.done?'✓':''}</div>
       <div class="pmain" onclick="openPactDetail(${i})">
-        <div class="pn">${p.n}</div>
+        <div class="pn">${esc(p.n)}</div>
         <div class="pmeta">${bits.join(' · ')}</div>
       </div>
       ${p.coach?'':'<span class="badge you">Yours</span>'}
-      ${p.share?'<span class="badge share">🔔 '+p.witness+'</span>':''}
+      ${p.share?'<span class="badge share">🔔 '+esc(p.witness)+'</span>':''}
       <span class="chev" onclick="openPactDetail(${i})">›</span>`;
     el.appendChild(row);
   });
@@ -1093,7 +1115,7 @@ async function togglePact(i){
       renderPacts(); toast('⚠️ Couldn\'t save that — '+(e.message||'try again'),2800); return;
     }
   }
-  if(p.done&&p.share&&p.contact){ toast(`Kept ✅ Open the pact to ping <b>${p.witness}</b>.`,2200); }
+  if(p.done&&p.share&&p.contact){ toast(`Kept ✅ Open the pact to ping <b>${esc(p.witness)}</b>.`,2200); }
 }
 
 /* ---------- custom-pact detail / tracking ---------- */
@@ -1108,15 +1130,15 @@ function renderPactDetail(){
   let heat=''; p.hist.forEach(v=>heat+=`<i class="${v===1?'hit':v===0?'miss':''}"></i>`);
   const wit = p.share
     ? `<div class="fld-l">Accountability witness</div>
-       <div class="witcard"><div class="wa">${p.witness[0].toUpperCase()}</div><div style="flex:1"><div class="wn">${p.witness}</div><div class="wm">Via ${p.channel||'WhatsApp'}${p.contact?' · '+p.contact:''} · alerted on breaks &amp; streak milestones · keeps are yours to share</div></div><button class="cbtn" onclick="pingWitness()">Ping</button></div>`
+       <div class="witcard"><div class="wa">${esc(p.witness[0].toUpperCase())}</div><div style="flex:1"><div class="wn">${esc(p.witness)}</div><div class="wm">Via ${esc(p.channel||'WhatsApp')}${p.contact?' · '+esc(p.contact):''} · alerted on breaks &amp; streak milestones · keeps are yours to share</div></div><button class="cbtn" onclick="pingWitness()">Ping</button></div>`
     : `<div class="fld-l">Accountability</div>
        <div class="witcard"><div class="wa" style="background:#F1F5F9;color:var(--muted)">＋</div><div style="flex:1"><div class="wn">Not shared yet</div><div class="wm">Add someone to keep you honest — they hear about breaks and streak milestones automatically.</div></div><button class="cbtn" onclick="shareFromDetail()">Share</button></div>`;
   document.getElementById('pdBody').innerHTML=`
     <div class="pd-hero">
       <div class="eyebrow" style="color:#FF7A6B">${p.coach?'● Set by '+coachN():'● Your pact — you own this'}</div>
-      <h2>${p.n}</h2>
+      <h2>${esc(p.n)}</h2>
       <div style="color:#9DB4C9;font-size:13px">${p.cad||'Daily'} · ${p.coach?'coach commitment':'self-accountability'}</div>
-      ${p.why?`<div class="pd-why">“${p.why}” — that's why this one exists.</div>`:''}
+      ${p.why?`<div class="pd-why">“${esc(p.why)}” — that's why this one exists.</div>`:''}
       <div class="streak">
         <div><div class="sv">🔥 ${streak}</div><div class="sk">day streak</div></div>
         <div><div class="sv">${best}</div><div class="sk">best run</div></div>
@@ -1330,6 +1352,7 @@ async function loadLive(){
     const wi=document.getElementById('wInput'); if(wi) wi.value=(+last.weight).toFixed(1); if(typeof updateWLabel==='function') try{updateWLabel();}catch(e){}
   }
   state.firstName=(client.name||'there').split(' ')[0];
+  state.name=client.name||'';   // full name for the Settings account card
   document.getElementById('dateHead').textContent =
     new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}) + ' · ' + greetWord();
   updateWeightUI();
@@ -1402,14 +1425,14 @@ async function loadLive(){
     state.exIndex=0; state.totalEx=EX.length;
     const st=document.querySelector('#logger .ttl'); if(st&&sessionName) st.textContent=sessionName.toUpperCase();
     // Today's Pact card ← the real session, credited to the real coach
-    document.getElementById('pcEyebrow').innerHTML=`● Today's Pact · set by ${state.coachName}`;
+    document.getElementById('pcEyebrow').innerHTML=`● Today's Pact · set by ${esc(state.coachName)}`;
     document.getElementById('pcName').textContent=(sessionName||'Today\'s session')+'.';
     document.getElementById('pcSub').textContent=`${EX.length} exercise${EX.length===1?'':'s'} · ready when you are`;
     const f=sessionEx[0];
     const bits=[f.name];
     if(f.sets&&f.reps) bits.push(`${f.sets} × ${f.reps}`); else if(f.sets) bits.push(`${f.sets} sets`);
     if(f.weight) bits.push(String(f.weight).match(/^\d+(\.\d+)?$/)?`${f.weight}kg`:String(f.weight));
-    document.getElementById('pcFirst').innerHTML=`<b>First lift:</b> ${bits.join(' · ')}`;
+    document.getElementById('pcFirst').innerHTML=`<b>First lift:</b> ${bits.map(esc).join(' · ')}`;
     const li=document.getElementById('lgIntro'); if(li) li.textContent=`${EX.length} exercises · set by ${state.coachName}. Confirm each set as you go — I'll log it for you.`;
   } else {
     // Nothing programmed today — say so honestly; no placeholder workout.
@@ -1663,6 +1686,16 @@ async function disconnectCalendar(){
     else toast('Couldn\'t disconnect just now — try again.',2600);
   }catch(e){ toast('Couldn\'t disconnect just now — try again.',2600); }
 }
+/* Delegated handler for the Disconnect button. Previously the terra_user_id
+   and provider label were interpolated straight into an inline onclick=,
+   i.e. a JS string inside an HTML attribute — two nested contexts, one
+   escape. data-* attributes remove the sink rather than escaping it. */
+document.addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-act="disconnect-device"]');
+  if(!b) return;
+  ev.preventDefault();
+  disconnectDevice(b.dataset.tuid, b.dataset.label || '');
+});
 async function disconnectDevice(tuid,label){
   if(!BOT_URL){ toast('Ask your coach to disconnect this one.'); return; }
   try{
@@ -1688,7 +1721,7 @@ function renderSettings(){
       ? `<button class="cbtn" onclick="connectDevice()">Reconnect</button>`
       : d.status==='error'
       ? `<button class="cbtn" onclick="connectDevice()">Fix</button>`
-      : `<button class="cbtn" style="background:#EEF2F6;border-color:#EEF2F6;color:var(--muted)" onclick="disconnectDevice('${d.terra_user_id}','${label.replace(/'/g,'')}')">Disconnect</button>`;
+      : `<button class="cbtn" style="background:#EEF2F6;border-color:#EEF2F6;color:var(--muted)" data-act="disconnect-device" data-tuid="${esc(d.terra_user_id)}" data-label="${esc(label)}">Disconnect</button>`;
     return `<div class="set-row ${d.status!=='revoked'?'on':''}"><div class="si">${ico}</div><div class="sc"><div class="sn">${label}</div><div class="sm">${sub}</div></div>${btn}</div>`;
   }).join('');
   const cal=state.calendar||{};
@@ -1705,7 +1738,7 @@ function renderSettings(){
     <button class="cbtn" onclick="connectDevice()">Connect</button></div>`;
   const shared=state.pacts.filter(p=>p.share).length;
   document.getElementById('setBody').innerHTML=`
-    <div class="set-card" style="margin-top:16px"><div class="set-row"><div class="si" style="background:var(--navy);color:#fff;font-family:Montserrat;font-weight:800">A</div><div class="sc"><div class="sn">Alex Joyner</div><div class="sm">Coached by ${coachN()} · target ${state.wt.target}kg</div></div></div></div>
+    <div class="set-card" style="margin-top:16px"><div class="set-row"><div class="si" style="background:var(--navy);color:#fff;font-family:Montserrat;font-weight:800">${esc((state.firstName||'A').charAt(0).toUpperCase())}</div><div class="sc"><div class="sn">${esc(state.name||state.firstName||'Your account')}</div><div class="sm">Coached by ${esc(coachN())} · target ${state.wt.target}kg</div></div></div></div>
     <div class="set-h">Connected apps</div>
     <div class="set-card">${apps}</div>
     <div class="sm" style="color:var(--faint);font-size:11.5px;margin:8px 2px">Nutrition pulls from Apple Health / Health Connect — your food app writes there, PACT reads it. Wearables connect once and every workout, sleep and step lands automatically.</div>
@@ -2191,7 +2224,7 @@ function stg(t){ document.getElementById('tmStage').textContent=t; }
 function stageReady(isNext){
   stg(isNext?'Next set':'Get ready'); const e=EX[state.exIndex], s=curSet();
   document.getElementById('tmBody').innerHTML=`
-    <div class="tm-ex">${e.name}</div>
+    <div class="tm-ex">${esc(e.name)}</div>
     <div class="tm-sub">Set ${tempo.setIdx+1} of ${state.sets.length} · Tempo ${e.tempo}</div>
     <div class="wmod">
       <button onclick="modW(-2.5)">−</button>
@@ -2213,7 +2246,7 @@ function modW(d){
 function beginSet(){
   stg('In the set'); tempo.rep=0; tempo.repTarget=+curSet().r; const e=EX[state.exIndex];
   document.getElementById('tmBody').innerHTML=`
-    <div class="tm-ex">${e.name}</div>
+    <div class="tm-ex">${esc(e.name)}</div>
     <div class="tm-ring"><div class="core2" id="tmCore"><div class="tm-phase" id="tmPhase">Set!</div><div class="tm-count" id="tmCount">Rep 0 of ${tempo.repTarget}</div></div></div>
     <div class="tm-note">Phone down, ears on — PAX counts every second of the lower ("Down, 2, 3…") then calls the drive.</div>
     <div class="tm-actions"><button class="tm-btn ghost" onclick="finishSet()">End set early</button></div>`;
@@ -2250,7 +2283,7 @@ function stageRPEcapture(){
   const vals=[6,6.5,7,7.5,8,8.5,9,9.5,10];
   document.getElementById('tmBody').innerHTML=`
     <div class="tm-ex">How did that feel?</div>
-    <div class="tm-sub">${e.name} · Set ${tempo.setIdx+1} · cap RPE ${s.tRPE}</div>
+    <div class="tm-sub">${esc(e.name)} · Set ${tempo.setIdx+1} · cap RPE ${s.tRPE}</div>
     <div class="rpe-scale" style="margin:20px 0">${vals.map(v=>`<button class="${v>s.tRPE?'over':''} ${v==s.rpe?'sel':''}" onclick="pickRPE(${v})">${v}</button>`).join('')}</div>
     <div class="tm-note">RPE = how many reps you had left. ${coachN()} capped you at ${s.tRPE} today — pick honestly.</div>`;
 }
@@ -2326,7 +2359,7 @@ function openWorkoutSummary(){
     <div class="st2"><div class="v">${prs}</div><div class="k">PRs</div></div>`;
   const list=document.getElementById('wkList'); list.innerHTML='';
   EX.forEach(e=>{ const all=e.work.every(s=>s.done);
-    list.innerHTML+=`<div class="sum-set"><span class="val2" style="flex:1;font-size:14px">${e.name}</span>${all?'<span class="dl up">✓ done</span>':'<span class="dl same">still open</span>'}</div>`; });
+    list.innerHTML+=`<div class="sum-set"><span class="val2" style="flex:1;font-size:14px">${esc(e.name)}</span>${all?'<span class="dl up">✓ done</span>':'<span class="dl same">still open</span>'}</div>`; });
   document.getElementById('wkSub').textContent=`${sessName} · ${totSets} sets logged · avg RPE ${rpeN?(rpeSum/rpeN).toFixed(1):'—'}`;
   // adaptive, honest-but-kind wrap message
   const title=doneEx===total?`${sessName} — done.`:doneEx===0?`${sessName} — logged so far.`:`${sessName} — most of the way.`;
@@ -2487,7 +2520,7 @@ function renderCardio(){
       :'Nothing yet this week — <a style="color:var(--red-dark);font-weight:600;cursor:pointer" onclick="openSettings()">connect your watch</a> and sessions land here automatically.')+'</div>';
     document.getElementById('cardioMeta').textContent='runs & rides'; return; }
   el.innerHTML=state.cardio.map(a=>`<div class="pact"><span style="font-size:20px;flex:0 0 28px">${CARDIO_ICON[a.type]||'⚡'}</span>
-    <div class="pn">${a.name||a.type[0].toUpperCase()+a.type.slice(1)}<div class="muted" style="font-size:11.5px;font-weight:500;margin-top:2px">${a.date}${a.hr?' · '+a.hr+' bpm':''}${a.kcal?' · '+a.kcal+' kcal':''}</div></div>
+    <div class="pn">${esc(a.name||a.type[0].toUpperCase()+a.type.slice(1))}<div class="muted" style="font-size:11.5px;font-weight:500;margin-top:2px">${a.date}${a.hr?' · '+a.hr+' bpm':''}${a.kcal?' · '+a.kcal+' kcal':''}</div></div>
     <div style="text-align:right"><div style="font-family:Montserrat;font-weight:800">${a.km?a.km.toFixed(1)+' km':(a.min?a.min+' min':'')}</div><div class="muted" style="font-size:11px">${a.km&&a.min?a.min+' min':''}</div></div></div>`).join('');
   const km=state.cardio.reduce((s,a)=>s+(a.km||0),0);
   document.getElementById('cardioMeta').textContent=`${state.cardio.length} session${state.cardio.length===1?'':'s'} · ${km.toFixed(1)} km`;
